@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHABA - Queenling It</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen">
+
+    <div class="text-center py-2 text-sm border-b border-gray-100 bg-white">
+        Welcome to our store so grateful you came! ✨
+    </div>
+    <div class="bg-ghaba-green text-white text-center py-2 text-xs md:text-sm font-medium">
+        ₹100rs off at purchase of ₹999 / ₹150rs off at purchase of ₹2999
+    </div>
+
+    <header class="sticky top-0 z-40 bg-white border-b-4 border-ghaba-gold shadow-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+            <button id="menu-btn" class="text-xl md:hidden text-gray-700 hover:text-ghaba-green">&#9776;</button>
+            <div class="logo-font text-3xl font-bold text-gray-800 cursor-pointer" onclick="showPage('home-page')">GHABA</div>
+            <nav class="hidden md:flex space-x-8 text-sm font-medium">
+                <a href="#" onclick="showPage('home-page')" class="text-gray-600 hover:text-ghaba-green transition border-b-2 border-transparent hover:border-ghaba-green pb-1">Home</a>
+                <a href="#" onclick="showPage('collections-page')" class="text-gray-600 hover:text-ghaba-green transition border-b-2 border-transparent hover:border-ghaba-green pb-1">Collections</a>
+                <a href="#" onclick="showPage('product-page'); updateProductPage(1);" class="text-gray-600 hover:text-ghaba-green transition border-b-2 border-transparent hover:border-ghaba-green pb-1">Product</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <div id="search-container" class="relative">
+                    <input type="text" id="search-input" placeholder="Search products..." class="hidden p-2 text-sm border rounded-lg w-48 transition-all duration-300 focus:ring-ghaba-green focus:border-ghaba-green" onkeyup="searchProducts(this.value)">
+                    <button id="search-icon" class="text-xl text-gray-600 hover:text-ghaba-green" onclick="toggleSearchInput()">&#128269;</button>
+                </div>
+                <button id="cart-open-btn" class="relative text-xl text-gray-600 hover:text-ghaba-green" onclick="showPage('cart-page'); updateCartDisplay();">
+                    &#128722; 
+                    <span id="cart-count" class="absolute -top-1 -right-2 text-xs bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center font-bold">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div id="home-page" class="page-content max-w-7xl mx-auto px-4 py-8">
+        
+        <section class="text-center mb-10 bg-white p-6 rounded-xl shadow-2xl">
+            <h1 class="hero-title text-4xl sm:text-6xl font-extrabold logo-font text-ghaba-green mb-3 uppercase tracking-wider">queenling it</h1>
+            <p class="text-md sm:text-lg text-gray-600">
+                Epitomising the modern values of class, <br> freedom and feminine elegance.
+            </p>
+        </section>
+
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+            <div class="relative overflow-hidden rounded-xl shadow-2xl cursor-pointer transition hover:shadow-3xl" onclick="showPage('collections-page')">
+                <img id="img-hero-1" src="https://placehold.co/400x500/504a44/ffffff?text=Festive+Sale" alt="Festive Sale" class="w-full h-auto object-cover transition duration-300 hover:scale-105">
+                <div class="absolute bottom-0 left-0 w-full bg-ghaba-gold bg-opacity-95 p-4 font-extrabold text-gray-900 flex justify-between items-center">
+                    <span>Festive sale</span> <span class="text-2xl">&rarr;</span>
+                </div>
+            </div>
+            <div class="relative overflow-hidden rounded-xl shadow-2xl cursor-pointer transition hover:shadow-3xl" onclick="showPage('collections-page')">
+                <img id="img-hero-2" src="https://placehold.co/400x500/504a44/ffffff?text=Model+Collection" alt="Model in Red" class="w-full h-auto object-cover transition duration-300 hover:scale-105">
+                <div class="absolute bottom-0 left-0 w-full bg-ghaba-gold bg-opacity-95 p-4 font-extrabold text-gray-900 flex justify-between items-center">
+                    <span>New Arrivals</span> <span class="text-2xl">&rarr;</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="mt-8 grid grid-cols-1 gap-4 max-w-4xl mx-auto">
+            <div id="home-collection-link-1" class="collection-link-card bg-gray-100" onclick="showPage('collections-page')">
+                <img id="img-collection-1" src="https://placehold.co/800x400/808080/ffffff?text=Best+Seller+Jewelry" alt="Best Seller" class="w-full h-auto object-cover rounded-xl transition duration-300 hover:scale-[1.02]">
+                <div class="card-overlay bg-ghaba-green text-white bg-opacity-95 flex justify-between items-center">
+                    <span id="text-collection-1">Best seller</span> <span class="text-2xl">&rarr;</span>
+                </div>
+            </div>
+
+            <div id="home-collection-link-2" class="collection-link-card bg-gray-100" onclick="showPage('collections-page')">
+                <img id="img-collection-2" src="https://placehold.co/800x400/969696/ffffff?text=Necklaces+Collection" alt="Necklaces" class="w-full h-auto object-cover rounded-xl transition duration-300 hover:scale-[1.02]">
+                <div class="card-overlay bg-ghaba-gold text-gray-900 bg-opacity-95 flex justify-between items-center">
+                    <span id="text-collection-2">Necklaces</span> <span class="text-2xl">&rarr;</span>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="collections-page" class="page-content hidden max-w-7xl mx-auto px-4 py-8">
+        <button class="text-lg font-semibold text-gray-600 mb-6 flex items-center hover:text-ghaba-green transition" onclick="goBack()">
+            &#8592; Back
+        </button>
+        <h2 class="text-4xl font-extrabold text-gray-800 mb-6 border-b-4 border-ghaba-gold pb-2 uppercase">Best Seller Collection</h2>
+        
+        <div class="flex justify-between items-center mb-6 text-sm text-gray-600">
+            <button class="flex items-center bg-white border border-gray-300 px-4 py-2 rounded-xl font-medium shadow-md hover:bg-gray-100 transition">
+                <span class="mr-2">Filter</span> &#9662;
+            </button>
+            <span>Total: <span id="product-count"></span> products</span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8" id="product-grid">
+            </div>
+    </div>
+
+    <div id="product-page" class="page-content hidden max-w-6xl mx-auto px-4 py-8 bg-white rounded-xl shadow-2xl">
+        <button class="text-lg font-semibold text-gray-600 mb-6 flex items-center hover:text-ghaba-green transition" onclick="goBack()">
+            &#8592; Back to Products
+        </button>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
+            <div class="md:col-span-1">
+                <div class="relative rounded-xl overflow-hidden shadow-xl">
+                    <img id="product-image" src="" alt="Product Main Image" class="w-full h-auto object-cover transition duration-500 transform hover:scale-105">
+                    <div class="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg text-red-500 cursor-pointer hover:scale-110 transition">&#10084;</div>
+                </div>
+            </div>
+
+            <div class="md:col-span-1">
+                <p class="text-sm text-gray-500 mb-1">GHABA</p>
+                <h1 id="product-detail-title" class="text-4xl font-extrabold text-gray-900 mb-3"></h1>
+                
+                <div class="flex items-center space-x-2 mb-4 text-sm text-gray-600">
+                    <span class="text-yellow-500 text-lg">★★★★☆</span>
+                    <span>(<span id="product-detail-reviews">10</span> reviews)</span>
+                </div>
+                
+                <p id="product-detail-price" class="text-4xl font-extrabold text-ghaba-green mb-1"></p>
+                <p id="product-detail-original-price" class="text-lg line-through text-gray-400 mb-4"></p>
+                <p class="text-xs text-gray-500 mb-6 font-medium">Shipping calculated at checkout.</p>
+
+                <div class="flex items-center mb-8 w-36 border-2 border-gray-300 rounded-xl overflow-hidden">
+                    <button id="qty-minus" class="p-3 text-gray-600 hover:bg-gray-100 transition focus:outline-none text-xl font-bold">-</button>
+                    <input id="qty-input" type="number" value="1" min="1" class="w-full text-center border-x-2 border-gray-300 focus:outline-none p-2 text-lg font-semibold" onchange="document.getElementById('qr-section').classList.add('hidden')">
+                    <button id="qty-plus" class="p-3 text-gray-600 hover:bg-gray-100 transition focus:outline-none text-xl font-bold">+</button>
+                </div>
+                
+                <div class="space-y-3 mb-8">
+                    <button id="add-to-cart-product-btn" class="w-full bg-ghaba-green text-white font-semibold py-4 rounded-xl hover:bg-green-800 transition shadow-lg text-lg" onclick="addToCart(currentProductId, document.getElementById('qty-input').value); showPage('cart-page');">
+                        🛒 Add to cart
+                    </button>
+                    <button class="w-full bg-ghaba-gold text-gray-900 font-semibold py-4 rounded-xl hover:bg-yellow-400 transition shadow-lg text-lg" onclick="showQrCodeWithPayment()">
+                        Buy it now (अभी खरीदें)
+                    </button>
+                </div>
+
+                <div id="qr-section" class="bg-yellow-50 p-6 rounded-xl shadow-inner border border-yellow-200 mb-8 text-center hidden">
+                    <h3 class="font-bold text-xl text-gray-900 mb-3 flex items-center justify-center">
+                        <span class="text-4xl mr-2">&#128247;</span> Scan Any UPI App
+                    </h3>
+                    <div id="upi-logos" class="flex justify-center space-x-4 mb-4">
+                        <span class="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full font-medium">PhonePe</span>
+                        <span class="text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full font-medium">Paytm</span>
+                        <span class="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-medium">UPI</span>
+                    </div>
+
+                    <img id="upi-qr-code" src="" alt="UPI QR Code" class="w-48 h-48 mx-auto rounded-lg border-4 border-white shadow-xl">
+                    <p class="text-sm mt-3 text-gray-700">Scan to pay: <span class="font-bold text-xl text-red-600" id="qr-payment-amount">Rs. 0.00</span></p>
+                    <p class="text-sm mt-1 text-gray-700">Scan to pay directly! (सीधे भुगतान के लिए स्कैन करें)</p>
+                </div>
+
+                <div class="bg-gray-100 border-l-4 border-ghaba-green p-4 rounded-lg mb-6">
+                    <h3 class="font-bold text-lg text-ghaba-green mb-2">Ghaba's Special Sale! (विशेष ऑफर)</h3>
+                    <ul class="list-disc list-inside text-sm space-y-1 text-gray-700">
+                        <li>Get **FREE** Shipping on online prepaid orders</li>
+                        <li>Order above ₹1999 get extra ₹100 Off!</li>
+                        <li>Order above ₹2999 get extra ₹150 Off!</li>
+                    </ul>
+                </div>
+                
+                <button class="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-900 transition mb-6">
+                    <span class="text-xl">&#x27A4;</span> <span>Share Product</span>
+                </button>
+
+                <div class="text-gray-700 border-t pt-4">
+                    <p class="font-semibold text-gray-900 mb-2">Product Description (उत्पाद विवरण):</p>
+                    <p id="product-detail-desc" class="text-base leading-relaxed"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="admin-page" class="page-content hidden max-w-7xl mx-auto px-4 py-8">
+        
+        <div id="admin-login-container" class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl border-4 border-ghaba-green">
+            <h3 class="text-3xl font-bold text-ghaba-green mb-6 text-center">🔐 Admin Login</h3>
+            <p class="text-center text-sm text-gray-600 mb-6">Enter Password (पासवर्ड दर्ज करें): <span class="font-bold text-red-500">1234</span></p>
+            <form onsubmit="event.preventDefault(); loginAdmin()">
+                <div class="mb-4">
+                    <label for="admin-password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="admin-password" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                </div>
+                <p id="login-error" class="text-red-500 text-sm mb-4 hidden">Invalid Password. Please try again.</p>
+                <button type="submit" class="w-full bg-ghaba-gold text-gray-900 font-semibold py-3 rounded-lg hover:bg-yellow-500 transition shadow-md">Login</button>
+            </form>
+        </div>
+
+        <div id="admin-content" class="hidden">
+            <button class="text-lg font-semibold text-gray-600 mb-6 flex items-center hover:text-ghaba-green transition" onclick="goBack()">
+                &#8592; Back
+            </button>
+            <h2 class="text-4xl font-extrabold text-gray-800 mb-6 border-b-4 border-ghaba-green pb-2 uppercase">👑 Admin Panel (प्रशासनिक पैनल)</h2>
+
+            <section class="mb-8 p-6 bg-white rounded-xl shadow-2xl border border-ghaba-gold">
+                <h3 class="text-2xl font-bold text-ghaba-green mb-4">💳 UPI / QR Code Management (भुगतान प्रबंधन)</h3>
+                <div id="admin-form-upi-qr" class="space-y-4 p-4 border rounded-lg bg-gray-50">
+                    <p class="text-gray-600 font-semibold">UPI ID और QR Code इमेज को अपडेट करें:</p>
+                    
+                    <div>
+                        <label for="upi-id-input" class="block text-sm font-medium text-gray-700 mb-1">UPI ID (e.g., yourname@bank)</label>
+                        <input type="text" id="upi-id-input" placeholder="Enter UPI ID here..." class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                    </div>
+                    
+                    <div>
+                        <label for="qr-code-url-input" class="block text-sm font-medium text-gray-700 mt-2 mb-1">1. Static QR Code Image URL (Optional)</label>
+                        <input type="text" id="qr-code-url-input" placeholder="Paste static QR image URL here..." class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                    </div>
+                    <div>
+                        <label for="qr-code-file-input" class="block text-sm font-medium text-gray-700 mt-2 mb-1">2. OR Upload QR Code Image File (Optional)</label>
+                        <input type="file" id="qr-code-file-input" accept="image/*" class="w-full text-sm mt-2">
+                        <p class="text-xs text-gray-500 mt-1">URL को फ़ाइल अपलोड से ज़्यादा प्राथमिकता दी जाएगी।</p>
+                    </div>
+                    <button class="w-full bg-ghaba-gold text-gray-900 font-semibold py-3 rounded-lg hover:bg-yellow-500 transition shadow-md" onclick="saveUpiQrData()">Save UPI/QR Settings</button>
+                </div>
+            </section>
+
+            <section class="mb-8 p-6 bg-white rounded-xl shadow-2xl border border-ghaba-gold">
+                <h3 class="text-2xl font-bold text-ghaba-green mb-4">🛠️ Hero Image Updater (हीरो इमेज अपडेटर - URL/File)</h3>
+                <div id="admin-form-hero" class="space-y-4 p-4 border rounded-lg bg-gray-50">
+                    <p class="text-gray-600 font-semibold">हीरो इमेज अपडेट करें (URL या फ़ाइल अपलोड):</p>
+                    
+                    <div>
+                        <label id="label-hero-1" class="editable-label block text-sm font-medium text-gray-700 mb-1" onclick="changeHeroLabel('hero-1')">Festive Sale Image (URL/File)</label>
+                        <input type="text" id="hero-img-url-1" placeholder="Paste URL here..." class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        <input type="file" id="hero-img-file-1" accept="image/*" class="w-full text-sm mt-2">
+                    </div>
+                    
+                    <div>
+                        <label id="label-hero-2" class="editable-label block text-sm font-medium text-gray-700 mb-1" onclick="changeHeroLabel('hero-2')">Model Collection Image (URL/File)</label>
+                        <input type="text" id="hero-img-url-2" placeholder="Paste URL here..." class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        <input type="file" id="hero-img-file-2" accept="image/*" class="w-full text-sm mt-2">
+                    </div>
+
+                    <button class="w-full bg-ghaba-gold text-gray-900 font-semibold py-3 rounded-lg hover:bg-yellow-500 transition shadow-md" onclick="saveImageUrls()">Save and Update Hero Images</button>
+                </div>
+            </section>
+
+            <section class="mb-8 p-6 bg-white rounded-xl shadow-2xl border border-ghaba-gold">
+                <h3 class="text-2xl font-bold text-ghaba-green mb-4">🔗 Home Page Link Management (होम पेज लिंक प्रबंधन)</h3>
+                <div id="admin-form-home-links" class="space-y-4 p-4 border rounded-lg bg-gray-50">
+                    <p class="text-gray-600 font-semibold">होम पेज पर दिखने वाले कलेक्शन लिंक्स को अपडेट करें:</p>
+                    
+                    <div>
+                        <label for="home-link-1-label" class="block text-sm font-medium text-gray-700 mb-1">Link 1 Label (Best Seller)</label>
+                        <input type="text" id="home-link-1-label" placeholder="e.g., Best Seller Jewels" class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        <label for="home-link-1-image" class="block text-sm font-medium text-gray-700 mt-2 mb-1">Link 1 Image URL</label>
+                        <input type="text" id="home-link-1-image" placeholder="Paste image URL here..." class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                    </div>
+                    
+                    <div>
+                        <label for="home-link-2-label" class="block text-sm font-medium text-gray-700 mb-1">Link 2 Label (Necklaces)</label>
+                        <input type="text" id="home-link-2-label" placeholder="e.g., Necklaces Collection" class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        <label for="home-link-2-image" class="block text-sm font-medium text-gray-700 mt-2 mb-1">Link 2 Image URL</label>
+                        <input type="text" id="home-link-2-image" placeholder="Paste image URL here..." class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                    </div>
+
+                    <button class="w-full bg-ghaba-gold text-gray-900 font-semibold py-3 rounded-lg hover:bg-yellow-500 transition shadow-md" onclick="saveHomeLinks()">Save and Update Home Links</button>
+                </div>
+            </section>
+
+            <section class="mb-8 p-6 bg-white rounded-xl shadow-2xl border border-ghaba-green">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-2xl font-bold text-ghaba-green">💎 Product Management (उत्पाद प्रबंधन)</h3>
+                    <button class="bg-ghaba-green text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-800 transition shadow-md" onclick="openProductEditForm(null)">
+                        + Add New Product (नया उत्पाद जोड़ें)
+                    </button>
+                </div>
+                <p class="text-sm text-gray-600 mb-4">You can edit or delete existing products here. (आप यहां मौजूदा उत्पादों को संपादित या हटा सकते हैं।)</p>
+                <div id="product-management-list" class="space-y-4">
+                    </div>
+            </section>
+            <section class="p-6 bg-white rounded-xl shadow-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-2xl font-bold text-ghaba-green">📦 Customer Orders (ग्राहक के ऑर्डर)</h3>
+                    <button onclick="clearAllOrders()" class="text-red-500 hover:text-red-700 text-sm font-medium">Clear All Orders</button>
+                </div>
+                <p class="text-sm text-gray-600 mb-4">Showing simulated orders stored in your browser's local storage.</p>
+                <div id="orders-list" class="space-y-4">
+                    </div>
+            </section>
+            </div>
+    </div>
+    
+    <div id="product-modal" class="fixed inset-0 z-50 hidden" style="background-color: rgba(0, 0, 0, 0.7);">
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white rounded-xl shadow-2xl p-6 overflow-y-auto max-h-screen">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h2 id="product-modal-title" class="text-2xl font-bold text-ghaba-green">Add New Product</h2>
+                <button class="text-3xl text-gray-600 hover:text-red-500 transition" onclick="document.getElementById('product-modal').classList.add('hidden')">&times;</button>
+            </div>
+            <form id="product-edit-form" onsubmit="event.preventDefault(); saveProduct();">
+                <input type="hidden" id="edit-product-id">
+
+                <div class="space-y-4">
+                    <div>
+                        <label for="edit-name" class="block text-sm font-medium text-gray-700">Product Name (उत्पाद का नाम)</label>
+                        <input type="text" id="edit-name" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="edit-price" class="block text-sm font-medium text-gray-700">Selling Price (₹)</label>
+                            <input type="number" id="edit-price" step="0.01" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        </div>
+                        <div>
+                            <label for="edit-original-price" class="block text-sm font-medium text-gray-700">Original Price (Discount Price - ₹)</label>
+                            <input type="number" id="edit-original-price" step="0.01" class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="edit-desc" class="block text-sm font-medium text-gray-700">Description (विवरण)</label>
+                        <textarea id="edit-desc" rows="3" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold"></textarea>
+                    </div>
+
+                    <div>
+                        <label for="edit-image-url" class="block text-sm font-medium text-gray-700">Image URL (इमेज URL)</label>
+                        <input type="text" id="edit-image-url" placeholder="Paste image URL here..." class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                    </div>
+                    <div>
+                        <label for="edit-image-file" class="block text-sm font-medium text-gray-700">Image File Upload (फ़ाइल अपलोड)</label>
+                        <input type="file" id="edit-image-file" accept="image/*" class="w-full text-sm mt-2">
+                        <p class="text-xs text-red-500 mt-1">Note: Uploaded file will override URL.</p>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-ghaba-gold text-gray-900 font-semibold py-3 rounded-xl hover:bg-yellow-500 transition shadow-lg text-lg mt-6">
+                    💾 Save Product (उत्पाद सहेजें)
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="checkout-page" class="page-content hidden max-w-3xl mx-auto px-4 py-8">
+        <button class="text-lg font-semibold text-gray-600 mb-6 flex items-center hover:text-ghaba-green transition" onclick="goBack()">
+            &#8592; Back to Cart
+        </button>
+        <h2 class="text-4xl font-extrabold text-gray-800 mb-6 border-b-4 border-ghaba-gold pb-2 uppercase">Checkout (भुगतान)</h2>
+        
+        <div class="bg-white p-8 rounded-xl shadow-2xl space-y-8">
+            <form id="checkout-form" onsubmit="event.preventDefault(); placeOrder();">
+                
+                <div class="border-b pb-6">
+                    <h3 class="text-2xl font-bold text-ghaba-green mb-4 flex items-center">
+                        <span class="bg-ghaba-gold text-gray-900 w-8 h-8 flex items-center justify-center rounded-full mr-3 text-lg font-extrabold">1</span>
+                        Shipping Address (शिपिंग पता)
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="checkout-name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                            <input type="text" id="checkout-name" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        </div>
+                        <div>
+                            <label for="checkout-phone" class="block text-sm font-medium text-gray-700">Phone Number (मोबाइल नंबर)</label>
+                            <input type="tel" id="checkout-phone" pattern="[0-9]{10}" title="Ten digits code" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        </div>
+                        <div>
+                            <label for="checkout-email" class="block text-sm font-medium text-gray-700">Email Address (ईमेल)</label>
+                            <input type="email" id="checkout-email" placeholder="Optional" class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        </div>
+                        <div>
+                            <label for="checkout-address" class="block text-sm font-medium text-gray-700">Full Address (पूरा पता)</label>
+                            <textarea id="checkout-address" rows="3" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold"></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="checkout-city" class="block text-sm font-medium text-gray-700">City</label>
+                                <input type="text" id="checkout-city" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                            </div>
+                            <div>
+                                <label for="checkout-pincode" class="block text-sm font-medium text-gray-700">Pincode (पिन कोड)</label>
+                                <input type="text" id="checkout-pincode" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-b py-6">
+                    <h3 class="text-2xl font-bold text-ghaba-green mb-4 flex items-center">
+                        <span class="bg-ghaba-gold text-gray-900 w-8 h-8 flex items-center justify-center rounded-full mr-3 text-lg font-extrabold">2</span>
+                        Order Summary (ऑर्डर सारांश)
+                    </h3>
+                    <div id="checkout-items-list" class="space-y-2 mb-4 p-4 bg-gray-50 rounded-lg border">
+                         </div>
+                    
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-sm text-gray-600">
+                            <span>Items Subtotal:</span>
+                            <span id="checkout-subtotal">Rs. 0.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm text-green-600 font-semibold">
+                            <span>Shipping:</span>
+                            <span>FREE</span>
+                        </div>
+                        <div class="flex justify-between font-bold text-xl mt-3 text-ghaba-green border-t border-dashed pt-3">
+                            <span>Total Payable:</span>
+                            <span id="checkout-total">Rs. 0.00</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="py-6">
+                    <h3 class="text-2xl font-bold text-ghaba-green mb-4 flex items-center">
+                        <span class="bg-ghaba-gold text-gray-900 w-8 h-8 flex items-center justify-center rounded-full mr-3 text-lg font-extrabold">3</span>
+                        Payment Method (भुगतान विकल्प)
+                    </h3>
+                    <div class="space-y-4">
+                         <label class="flex flex-col p-4 border-2 border-ghaba-green rounded-xl bg-green-50 cursor-pointer transition shadow-md hover:shadow-lg">
+                            <div class="flex items-center">
+                                <input type="radio" name="payment-method" value="online" checked class="h-5 w-5 text-ghaba-green focus:ring-ghaba-green">
+                                <span class="ml-3 font-semibold text-gray-900 text-lg">Online Payment (UPI/Card/Netbanking) - Recommended</span>
+                            </div>
+                            <div class="flex space-x-2 mt-2 ml-8 text-xs text-gray-600">
+                                <span class="bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full font-medium">PhonePe</span>
+                                <span class="bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full font-medium">Paytm</span>
+                                <span class="bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-medium">UPI</span>
+                                <span class="bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full font-medium">Card</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-ghaba-green text-white font-semibold py-4 rounded-xl hover:bg-green-800 transition shadow-lg text-xl mt-6">
+                    ✅ Pay Now & Place Order (भुगतान करें) - <span id="checkout-submit-total">Rs. 0.00</span>
+                </button>
+            </form>
+        </div>
+    </div>
+    <div id="cart-page" class="page-content hidden max-w-7xl mx-auto px-4 py-8">
+        <button class="text-lg font-semibold text-gray-600 mb-6 flex items-center hover:text-ghaba-green transition" onclick="goBack()">
+            &#8592; Continue Shopping
+        </button>
+        <h2 class="text-4xl font-extrabold text-gray-800 mb-6 border-b-4 border-ghaba-gold pb-2 uppercase flex items-center">
+            &#128722; Your Shopping Cart (<span id="cart-page-count">0</span> items)
+        </h2>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-2xl">
+                 <div id="cart-confirm-message" class="flex items-center p-3 bg-green-100 text-green-700 rounded-lg mb-4 font-semibold shadow-md hidden">
+                    &#10003; <span class="ml-2">Item added to your cart (कार्ट में जोड़ा गया)</span>
+                </div>
+                <div id="cart-items-list" class="space-y-6">
+                    </div>
+            </div>
+
+            <div class="lg:col-span-1">
+                <div class="bg-gray-50 p-6 rounded-xl shadow-2xl sticky top-20 border border-gray-200">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Order Summary</h3>
+                    
+                    <div class="space-y-2 mb-6 text-gray-700">
+                        <div class="flex justify-between">
+                            <span>Subtotal (<span id="cart-summary-item-count">0</span> items):</span>
+                            <span id="cart-summary-subtotal" class="font-medium">Rs. 0.00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Shipping:</span>
+                            <span class="font-medium text-green-600">FREE</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between font-bold text-2xl text-ghaba-green border-t pt-4">
+                        <span>Total:</span>
+                        <span id="cart-summary-total">Rs. 0.00</span>
+                    </div>
+
+                    <button class="w-full bg-ghaba-green text-white font-semibold py-3 rounded-xl hover:bg-green-800 transition shadow-lg text-lg mt-6" id="checkout-btn-full" onclick="setupCheckoutPage(); showPage('checkout-page');">
+                        Proceed to Checkout (भुगतान के लिए आगे बढ़ें)
+                    </button>
+                    
+                    <button class="w-full border border-gray-400 text-gray-800 font-semibold py-3 rounded-xl hover:bg-gray-100 transition shadow-lg text-lg mt-3" onclick="goBack()">
+                        Continue Shopping
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer class="bg-gray-800 text-white p-6 mt-10">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm">
+            <div class="mb-4 md:mb-0 text-center md:text-left">
+                <p>&copy; 2025 GHABA - Queenling It. All Rights Reserved.</p>
+                <p class="text-xs text-gray-400 mt-1">Made with elegance and care.</p>
+            </div>
+            <div class="flex items-center space-x-6">
+                <a href="#" class="hover:text-ghaba-gold transition">Contact Us</a>
+                <a href="#" class="hover:text-ghaba-gold transition">Privacy Policy</a>
+                
+                <a href="#admin" onclick="showPage('admin-page')" class="flex items-center space-x-1 text-xs px-3 py-1 bg-ghaba-gold text-gray-900 font-bold rounded-full shadow-lg transition hover:bg-yellow-400">
+                    <span class="text-base">👑</span>
+                    <span>.</span>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
+...
+    <div id="qr-section" class="bg-yellow-50 p-6 rounded-xl shadow-inner border border-yellow-200 mb-8 text-center hidden">
+        <h3 class="font-bold text-xl text-gray-900 mb-3 flex items-center justify-center">
+            <span class="text-4xl mr-2">&#128247;</span> Scan Any UPI App
+        </h3>
+        <div id="upi-logos" class="flex justify-center space-x-4 mb-4">
+            <span class="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full font-medium">PhonePe</span>
+            <span class="text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full font-medium">Paytm</span>
+            <span class="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-medium">UPI</span>
+        </div>
+
+        <img id="upi-qr-code" src="" alt="UPI QR Code" class="w-48 h-48 mx-auto rounded-lg border-4 border-white shadow-xl">
+        
+        <p class="text-sm mt-3 text-gray-700">UPI ID: <span class="font-bold text-gray-900" id="qr-upi-id"></span></p>
+
+        <p class="text-sm mt-1 text-gray-700">Scan to pay: <span class="font-bold text-xl text-red-600" id="qr-payment-amount">Rs. 0.00</span></p>
+        <p class="text-sm mt-1 text-gray-700">Scan to pay directly! (सीधे भुगतान के लिए स्कैन करें)</p>
+
+        <p class="text-lg font-bold text-red-600 mt-4">Time Remaining: <span id="qr-timer">3:00</span></p>
+    </div>
+
+    <div class="bg-gray-100 border-l-4 border-ghaba-green p-4 rounded-lg mb-6">
+</body>
+</html>

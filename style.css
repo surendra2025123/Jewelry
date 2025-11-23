@@ -1,0 +1,67 @@
+/* Custom Styles for Fonts and Colors */
+:root {
+    --ghaba-green: #2a3c2a; /* Richer, darker green */
+    --ghaba-gold: #ffc72c; /* Gold accent color */
+}
+
+/* Setting a default modern font */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f3f4f6; /* Lighter background for better contrast */
+}
+
+/* Custom utility for the main brand color */
+.bg-ghaba-green { background-color: var(--ghaba-green); }
+.text-ghaba-green { color: var(--ghaba-green); }
+.border-ghaba-green { border-color: var(--ghaba-green); }
+
+/* Custom utility for the accent color */
+.bg-ghaba-gold { background-color: var(--ghaba-gold); }
+.text-ghaba-gold { color: var(--ghaba-gold); }
+
+/* Custom font for the logo */
+.logo-font {
+    font-family: 'Playfair Display', serif; /* A graceful font for the logo */
+    letter-spacing: 2px;
+}
+
+/* Styling for Image Link Cards */
+.collection-link-card {
+    position: relative;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+.collection-link-card:hover {
+    transform: translateY(-5px);
+}
+.collection-link-card .card-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: left;
+}
+.collection-link-card:nth-child(1) .card-overlay {
+    background-color: var(--ghaba-green);
+    color: white;
+    opacity: 0.95;
+}
+.collection-link-card:nth-child(2) .card-overlay {
+    background-color: var(--ghaba-gold);
+    color: var(--ghaba-green);
+    opacity: 0.95;
+}
+
+/* Class for Editable Elements in Admin Panel */
+.editable-label:hover {
+    cursor: pointer;
+    text-decoration: underline;
+    color: var(--ghaba-green);
+}
