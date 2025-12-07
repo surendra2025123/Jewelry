@@ -1,1020 +1,1206 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import { 
-    getFirestore, doc, collection, getDocs, setDoc, updateDoc, deleteDoc, 
-    addDoc, query, orderBy, onSnapshot, writeBatch 
-} from "firebase/firestore"; // <-- Added getFirestore and other firestore functions
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHABA - Queenling It</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen">
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyAuDx79oTuL2-fuwVziGMoh_ta9ZTVuGto",
-    authDomain: "add-app-2f3a3.firebaseapp.com",
-    projectId: "add-app-2f3a3",
-    storageBucket: "add-app-2f3a3.firebasestorage.app",
-    messagingSenderId: "137750127436",
-    appId: "1:137750127436:web:c0e71a4db8c18f4e41a5e9",
-    measurementId: "G-LLEDY8GTB4"
-};
+    <div class="text-center py-2 text-sm border-b border-gray-100 bg-white">
+        Welcome to our store so grateful you came! ✨
+    </div>
+    <div class="bg-ghaba-green text-white text-center py-2 text-xs md:text-sm font-medium">
+        ₹100rs off at purchase of ₹999 / ₹150rs off at purchase of ₹2999
+    </div>
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const db = getFirestore(app); // <-- Firestore Database Initialization
-
-// Collection constants
-const COLLECTION = {
-    PRODUCTS: "products",
-    ORDERS: "orders",
-    SETTINGS: "settings"
-};
-
-
-// --- FIREBASE GLOBALS & INITIALIZATION ---
-// ये ग्लोबल वैरियेबल्स अब Firebase लिसनर्स द्वारा पॉपुलेट और सिंक किए जाएंगे।
-let initialProducts = []; 
-let products = [];
-// Cart अभी भी user के ब्राउज़र में लोकल रहेगा (Local Storage)
-let currentCart = JSON.parse(localStorage.getItem('ghaba_cart')) || []; 
-let currentProductId = 1; 
-let heroLabels = {};
-let homeLinksData = {};
-let upiQrData = {};
-let ADMIN_PASSWORD = "1234"; // यह cloud से लोड होगा
-let orders = [];
-let adminSettings = {}; // Cloud से लोड की गई सभी सेटिंग्स
-const DEFAULT_QR_URL = "https://placehold.co/200x200/2a3c2a/ffc72c?text=SCAN+HERE"; 
-let qrTimerInterval;
-
-// Firebase फंक्शन्स को अब सीधे module scope से उपयोग किया जाता है
-if (!db) {
-    console.error("Firebase Firestore is not initialized. Cloud features disabled.");
-}
-
-
-// --- CORE UTILITY FUNCTIONS ---
-let pageHistory = []; 
-
-function showPage(pageId, isBack = false) {
-    const currentlyVisiblePage = document.querySelector('.page-content:not(.hidden)');
-    const currentId = currentlyVisiblePage ? currentlyVisiblePage.id : (pageHistory.length > 0 ? pageHistory[pageHistory.length - 1] : 'home-page');
-
-    if (!isBack && currentId && currentId !== pageId) {
-        pageHistory.push(currentId);
-    }
-    
-    document.querySelectorAll('.page-content').forEach(page => {
-        page.classList.add('hidden');
-    });
-
-    if (pageId === 'admin-page') {
-        const adminContent = document.getElementById('admin-content');
-        const loginContainer = document.getElementById('admin-login-container');
-        
-        if (adminContent && adminContent.classList.contains('hidden')) {
-            loginContainer.classList.remove('hidden');
-            populateAdminFields();
-        } else if (adminContent) {
-            loginContainer.classList.add('hidden');
-            renderAdminPanel(); 
-        }
-    }
-    
-    // Contact/Privacy content logic
-    if (pageId === 'contact-page' || pageId === 'privacy-page') {
-        const contentId = pageId.replace('-page', '-content');
-        const contentField = pageId === 'contact-page' ? 'contactPageContent' : 'privacyPageContent';
-        const contentText = adminSettings[contentField] || 'Content not set yet. Please update from Admin Panel.';
-        // <pre> tag whitespace को बनाए रखता है (जैसे कि अगर आपने एडमिन पैनल में नई लाइन डाली हो)
-        document.getElementById(contentId).innerHTML = `<pre class="whitespace-pre-wrap">${contentText}</pre>`;
-    }
-    
-    document.getElementById(pageId).classList.remove('hidden');
-    window.scrollTo(0, 0); 
-}
-
-function goBack() {
-    if (pageHistory.length > 0) {
-        const previousPageId = pageHistory.pop();
-        showPage(previousPageId, true);
-    } else {
-        showPage('home-page'); 
-    }
-}
-
-function loginAdmin() {
-    const passwordInput = document.getElementById('admin-password').value;
-    const loginError = document.getElementById('login-error');
-    const loginContainer = document.getElementById('admin-login-container');
-    const adminContent = document.getElementById('admin-content');
-
-    if (passwordInput === ADMIN_PASSWORD) {
-        loginContainer.classList.add('hidden');
-        adminContent.classList.remove('hidden');
-        loginError.classList.add('hidden');
-        alert('Welcome to Admin Panel! (एडमिन पैनल में आपका स्वागत है!)');
-        renderAdminPanel(); 
-        populateAdminFields();
-    } else {
-        loginError.classList.remove('hidden');
-        document.getElementById('admin-password').value = '';
-    }
-}
-
-function toggleSearchInput() {
-    const input = document.getElementById('search-input');
-    const icon = document.getElementById('search-icon');
-    if (input.classList.contains('hidden')) {
-        input.classList.remove('hidden');
-        input.focus();
-        icon.classList.add('text-ghaba-green');
-    } else {
-        input.classList.add('hidden');
-        input.value = '';
-        icon.classList.remove('text-ghaba-green');
-        products = [...initialProducts]; 
-        renderProductGrid();
-    }
-}
-
-function searchProducts(query) {
-    const lowerCaseQuery = query.toLowerCase().trim();
-    if (lowerCaseQuery === '') {
-        products = [...initialProducts];
-    } else {
-        products = initialProducts.filter(p => 
-            p.name.toLowerCase().includes(lowerCaseQuery) ||
-            p.desc.toLowerCase().includes(lowerCaseQuery)
-        );
-    }
-    renderProductGrid();
-    showPage('collections-page'); 
-}
-
-function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-}
-
-// --- RENDERING / DISPLAY LOGIC ---
-
-function renderProducts(productArray = products) {
-    const grid = document.getElementById('product-grid');
-    if (!grid) return; 
-
-    grid.innerHTML = '';
-    document.getElementById('product-count').textContent = productArray.length;
-    
-    if (productArray.length === 0) {
-        grid.innerHTML = '<p class="text-xl text-gray-500 col-span-full text-center py-10">No products found. (कोई उत्पाद नहीं मिला।)</p>';
-        return;
-    }
-    
-    productArray.forEach(product => {
-        const discount = (product.originalPrice > product.price) ? 'Sale' : '';
-        const card = document.createElement('div');
-        card.className = "product-card bg-white rounded-xl shadow-2xl overflow-hidden transition hover:shadow-3xl hover:scale-[1.03] cursor-pointer";
-        card.setAttribute('data-product-id', product.id);
-        card.onclick = () => { showPage('product-page'); updateProductPage(product.id); };
-        card.innerHTML = `
-            <div class="relative bg-gray-50">
-                <img src="${product.image}" alt="${product.name}" class="w-full h-auto object-cover transform transition duration-500 hover:scale-110 aspect-[3/4]">
-                ${discount ? `<span class="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">SALE</span>` : ''}
+    <header class="sticky top-0 z-40 bg-white border-b-4 border-ghaba-gold shadow-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+            <button id="menu-btn" class="text-xl md:hidden text-gray-700 hover:text-ghaba-green">&#9776;</button>
+            <div class="logo-font text-3xl font-bold text-gray-800 cursor-pointer" onclick="showPage('home-page')">GHABA</div>
+            <nav class="hidden md:flex space-x-8 text-sm font-medium">
+                <a href="#" onclick="showPage('home-page')" class="text-gray-600 hover:text-ghaba-green transition border-b-2 border-transparent hover:border-ghaba-green pb-1">Home</a>
+                <a href="#" onclick="showPage('collections-page'); renderProducts();" class="text-gray-600 hover:text-ghaba-green transition border-b-2 border-transparent hover:border-ghaba-green pb-1">Collections</a>
+                <a href="#" onclick="showPage('product-page'); updateProductPage(1);" class="text-gray-600 hover:text-ghaba-green transition border-b-2 border-transparent hover:border-ghaba-green pb-1">Product</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <div id="search-container" class="relative">
+                    <input type="text" id="search-input" placeholder="Search products..." class="hidden p-2 text-sm border rounded-lg w-48 transition-all duration-300 focus:ring-ghaba-green focus:border-ghaba-green" onkeyup="searchProducts(this.value)">
+                    <button id="search-icon" class="text-xl text-gray-600 hover:text-ghaba-green" onclick="toggleSearchInput()">&#128269;</button>
+                </div>
+                <button id="cart-open-btn" class="relative text-xl text-gray-600 hover:text-ghaba-green" onclick="showPage('cart-page'); updateCartDisplay();">
+                    &#128722; 
+                    <span id="cart-count" class="absolute -top-1 -right-2 text-xs bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center font-bold">0</span>
+                </button>
             </div>
-            <div class="p-4">
-                <h3 class="font-semibold text-lg text-gray-900 mb-1 truncate">${product.name}</h3>
-                <div class="flex items-center space-x-2">
-                    <p class="text-xl font-bold text-ghaba-green">₹${product.price.toFixed(2)}</p>
-                    ${product.originalPrice > product.price ? `<p class="text-sm line-through text-gray-400">₹${product.originalPrice.toFixed(2)}</p>` : ''}
+        </div>
+    </header>
+
+    <div id="home-page" class="page-content max-w-7xl mx-auto px-4 py-8">
+        
+        <section class="text-center mb-10 bg-white p-6 rounded-xl shadow-2xl">
+            <h1 class="hero-title text-4xl sm:text-6xl font-extrabold logo-font text-ghaba-green mb-3 uppercase tracking-wider">queenling it</h1>
+            <p class="text-md sm:text-lg text-gray-600">
+                Epitomising the modern values of class, <br> freedom and feminine elegance.
+            </p>
+        </section>
+
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+            <div class="relative overflow-hidden rounded-xl shadow-2xl cursor-pointer transition hover:shadow-3xl" onclick="showPage('collections-page'); renderProducts();">
+                <img id="img-hero-1" src="https://placehold.co/400x500/504a44/ffffff?text=Festive+Sale" alt="Festive Sale" class="w-full h-auto object-cover transition duration-300 hover:scale-105">
+                <div class="absolute bottom-0 left-0 w-full bg-ghaba-gold bg-opacity-95 p-4 font-extrabold text-gray-900 flex justify-between items-center">
+                    <span>Festive sale</span> <span class="text-2xl">&rarr;</span>
                 </div>
             </div>
-        `;
-        grid.appendChild(card);
-    });
-}
+            <div class="relative overflow-hidden rounded-xl shadow-2xl cursor-pointer transition hover:shadow-3xl" onclick="showPage('collections-page'); renderProducts();">
+                <img id="img-hero-2" src="https://placehold.co/400x500/504a44/ffffff?text=Model+Collection" alt="Model in Red" class="w-full h-auto object-cover transition duration-300 hover:scale-105">
+                <div class="absolute bottom-0 left-0 w-full bg-ghaba-gold bg-opacity-95 p-4 font-extrabold text-gray-900 flex justify-between items-center">
+                    <span>New Arrivals</span> <span class="text-2xl">&rarr;</span>
+                </div>
+            </div>
+        </section>
 
-function renderProductGrid() {
-    renderProducts(products);
-}
+        <section class="mt-8 grid grid-cols-1 gap-4 max-w-4xl mx-auto">
+            <div id="home-collection-link-1" class="collection-link-card bg-gray-100" onclick="showPage('collections-page'); renderProducts();">
+                <img id="img-collection-1" src="https://placehold.co/800x400/808080/ffffff?text=Best+Seller+Jewelry" alt="Best Seller" class="w-full h-auto object-cover rounded-xl transition duration-300 hover:scale-[1.02]">
+                <div class="card-overlay bg-ghaba-green text-white bg-opacity-95 flex justify-between items-center">
+                    <span id="text-collection-1">Best seller</span> <span class="text-2xl">&rarr;</span>
+                </div>
+            </div>
 
-function sortProducts(sortOption) {
-    let sortedProducts = [...initialProducts];
-    switch (sortOption) {
-        case 'price-asc': sortedProducts.sort((a, b) => a.price - b.price); break;
-        case 'price-desc': sortedProducts.sort((a, b) => b.price - a.price); break;
-        case 'name-asc': sortedProducts.sort((a, b) => a.name.localeCompare(b.name)); break;
-        default: sortedProducts = [...initialProducts]; break;
-    }
-    products = sortedProducts;
-    renderProductGrid();
-}
+            <div id="home-collection-link-2" class="collection-link-card bg-gray-100" onclick="showPage('collections-page'); renderProducts();">
+                <img id="img-collection-2" src="https://placehold.co/800x400/969696/ffffff?text=Necklaces+Collection" alt="Necklaces" class="w-full h-auto object-cover rounded-xl transition duration-300 hover:scale-[1.02]">
+                <div class="card-overlay bg-ghaba-gold text-gray-900 bg-opacity-95 flex justify-between items-center">
+                    <span id="text-collection-2">Necklaces</span> <span class="text-2xl">&rarr;</span>
+                </div>
+            </div>
+        </section>
+    </div>
 
-function updateProductPage(productId) {
-    const product = initialProducts.find(p => p.id === productId);
-    if (!product) {
-        // If product not found, try to find the first product
-        const firstProduct = initialProducts[0];
-        if (firstProduct) {
-             productId = firstProduct.id;
-             currentProductId = productId;
-             product = firstProduct;
-        } else {
-            // alert("Product not found and no other products available!");
-            goBack();
-            return;
-        }
-    }
+    <div id="collections-page" class="page-content hidden max-w-7xl mx-auto px-4 py-8">
+        <button class="text-lg font-semibold text-gray-600 mb-6 flex items-center hover:text-ghaba-green transition" onclick="goBack()">
+            &#8592; Back
+        </button>
+        <h2 class="text-4xl font-extrabold text-gray-800 mb-6 border-b-4 border-ghaba-gold pb-2 uppercase">Best Seller Collection</h2>
+        
+        <div class="flex justify-between items-center mb-6 text-sm text-gray-600">
+            <div class="relative">
+                <select id="sort-by-select" onchange="sortProducts(this.value)" class="flex items-center bg-white border border-gray-300 px-4 py-2 rounded-xl font-medium shadow-md hover:bg-gray-100 transition appearance-none pr-10">
+                    <option value="default">Sort By: Featured</option>
+                    <option value="price-asc">Price: Low to High</option>
+                    <option value="price-desc">Price: High to Low</option>
+                    <option value="name-asc">Alphabetically: A-Z</option>
+                </select>
+                <span class="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">&#9662;</span>
+            </div>
+            <span>Total: <span id="product-count"></span> products</span>
+        </div>
 
-    currentProductId = productId;
-    document.getElementById('product-image').src = product.image;
-    document.getElementById('product-detail-title').textContent = product.name;
-    document.getElementById('product-detail-price').textContent = `₹${product.price.toFixed(2)}`;
-    document.getElementById('product-detail-original-price').textContent = product.originalPrice > product.price ? `₹${product.originalPrice.toFixed(2)}` : '';
-    document.getElementById('product-detail-desc').textContent = product.desc;
-    document.getElementById('qty-input').value = 1;
-    document.getElementById('qr-section').classList.add('hidden');
-    document.getElementById('add-to-cart-product-btn').setAttribute('onclick', `addToCart('${product.id}', document.getElementById('qty-input').value); showPage('cart-page');`);
-    document.getElementById('qty-plus').setAttribute('onclick', 'updateQty(1)');
-    document.getElementById('qty-minus').setAttribute('onclick', 'updateQty(-1)');
-}
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8" id="product-grid">
+            </div>
+    </div>
 
-function updateQty(change) {
-    const input = document.getElementById('qty-input');
-    let current = parseInt(input.value, 10);
-    current += change;
-    if (current < 1) current = 1;
-    input.value = current;
-    document.getElementById('qr-section').classList.add('hidden');
-}
+    <div id="product-page" class="page-content hidden max-w-6xl mx-auto px-4 py-8 bg-white rounded-xl shadow-2xl">
+        <button class="text-lg font-semibold text-gray-600 mb-6 flex items-center hover:text-ghaba-green transition" onclick="goBack()">
+            &#8592; Back to Products
+        </button>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
+            <div class="md:col-span-1">
+                <div class="relative rounded-xl overflow-hidden shadow-xl">
+                    <img id="product-image" src="" alt="Product Main Image" class="w-full h-auto object-cover transition duration-500 transform hover:scale-105">
+                    <div class="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg text-red-500 cursor-pointer hover:scale-110 transition">&#10084;</div>
+                </div>
+            </div>
 
+            <div class="md:col-span-1">
+                <p class="text-sm text-gray-500 mb-1">GHABA</p>
+                <h1 id="product-detail-title" class="text-4xl font-extrabold text-gray-900 mb-3"></h1>
+                
+                <div class="flex items-center space-x-2 mb-4 text-sm text-gray-600">
+                    <span class="text-yellow-500 text-lg">★★★★☆</span>
+                    <span>(<span id="product-detail-reviews">10</span> reviews)</span>
+                </div>
+                
+                <p id="product-detail-price" class="text-4xl font-extrabold text-ghaba-green mb-1"></p>
+                <p id="product-detail-original-price" class="text-lg line-through text-gray-400 mb-4"></p>
+                <p class="text-xs text-gray-500 mb-6 font-medium">Shipping calculated at checkout.</p>
 
-// --- CART/CHECKOUT LOGIC ---
+                <div class="flex items-center mb-8 w-36 border-2 border-gray-300 rounded-xl overflow-hidden">
+                    <button id="qty-minus" class="p-3 text-gray-600 hover:bg-gray-100 transition focus:outline-none text-xl font-bold" onclick="updateQty(-1)">-</button>
+                    <input id="qty-input" type="number" value="1" min="1" class="w-full text-center border-x-2 border-gray-300 focus:outline-none p-2 text-lg font-semibold" onchange="document.getElementById('qr-section').classList.add('hidden')">
+                    <button id="qty-plus" class="p-3 text-gray-600 hover:bg-gray-100 transition focus:outline-none text-xl font-bold" onclick="updateQty(1)">+</button>
+                </div>
+                
+                <div class="space-y-3 mb-8">
+                    <button id="add-to-cart-product-btn" class="w-full bg-ghaba-green text-white font-semibold py-4 rounded-xl hover:bg-green-800 transition shadow-lg text-lg" onclick="addToCart(currentProductId, document.getElementById('qty-input').value); showPage('cart-page');">
+                        🛒 Add to cart
+                    </button>
+                    <button class="w-full bg-ghaba-gold text-gray-900 font-semibold py-4 rounded-xl hover:bg-yellow-400 transition shadow-lg text-lg" onclick="setupCheckoutPage(); showPage('checkout-page');">
+                        Buy it now (अभी खरीदें)
+                    </button>
+                </div>
 
-function saveCart() {
-    localStorage.setItem('ghaba_cart', JSON.stringify(currentCart));
-}
+                <div id="qr-section" class="bg-yellow-50 p-6 rounded-xl shadow-inner border border-yellow-200 mb-8 text-center hidden">
+                    <h3 class="font-bold text-xl text-gray-900 mb-3 flex items-center justify-center">
+                        <span class="text-4xl mr-2">&#128247;</span> Scan Any UPI App
+                    </h3>
+                    <div id="upi-logos" class="flex justify-center space-x-4 mb-4">
+                        <span class="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full font-medium">PhonePe</span>
+                        <span class="text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full font-medium">Paytm</span>
+                        <span class="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-medium">UPI</span>
+                    </div>
 
-function calculateCartTotal() {
-    const subtotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    return { subtotal, total: subtotal };
-}
+                    <img id="upi-qr-code" src="" alt="UPI QR Code" class="w-48 h-48 mx-auto rounded-lg border-4 border-white shadow-xl">
+                    <p class="text-sm mt-3 text-gray-700">Scan to pay: <span class="font-bold text-xl text-red-600" id="qr-payment-amount">Rs. 0.00</span></p>
+                    <p class="text-sm mt-1 text-gray-700">Scan to pay directly! (सीधे भुगतान के लिए स्कैन करें)</p>
+                </div>
 
-function updateCartDisplay() {
-    const { subtotal, total } = calculateCartTotal();
-    const cartCountElement = document.getElementById('cart-count');
-    const cartPageCountElement = document.getElementById('cart-page-count');
-    const cartList = document.getElementById('cart-items-list');
-    const itemCount = currentCart.reduce((sum, item) => sum + item.quantity, 0);
+                <div class="bg-gray-100 border-l-4 border-ghaba-green p-4 rounded-lg mb-6">
+                    <h3 class="font-bold text-lg text-ghaba-green mb-2">Ghaba's Special Sale! (विशेष ऑफर)</h3>
+                    <ul class="list-disc list-inside text-sm space-y-1 text-gray-700">
+                        <li>Get **FREE** Shipping on online prepaid orders</li>
+                        <li>Order above ₹1999 get extra ₹100 Off!</li>
+                        <li>Order above ₹2999 get extra ₹150 Off!</li>
+                    </ul>
+                </div>
+                
+                <button class="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-900 transition mb-6">
+                    <span class="text-xl">&#x27A4;</span> <span>Share Product</span>
+                </button>
 
-    cartCountElement.textContent = itemCount;
-    if (cartPageCountElement) cartPageCountElement.textContent = itemCount;
-    if (document.getElementById('cart-summary-item-count')) {
-        document.getElementById('cart-summary-item-count').textContent = itemCount;
-        document.getElementById('cart-summary-subtotal').textContent = '₹' + subtotal.toFixed(2);
-        document.getElementById('cart-summary-total').textContent = '₹' + total.toFixed(2);
-    }
+                <div class="text-gray-700 border-t pt-4">
+                    <p class="font-semibold text-gray-900 mb-2">Product Description (उत्पाद विवरण):</p>
+                    <p id="product-detail-desc" class="text-base leading-relaxed"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="contact-page" class="page-content hidden max-w-4xl mx-auto px-4 py-8">
+        <button class="text-lg font-semibold text-gray-600 mb-6 flex items-center hover:text-ghaba-green transition" onclick="goBack()">
+            &#8592; Back
+        </button>
+        <h2 class="text-4xl font-extrabold text-gray-800 mb-6 border-b-4 border-ghaba-gold pb-2 uppercase">Contact Us</h2>
+        <div id="contact-content" class="bg-white p-6 rounded-xl shadow-2xl space-y-4">
+            </div>
+    </div>
     
-    if (cartList) {
-        cartList.innerHTML = '';
-        if (currentCart.length === 0) {
-            document.getElementById('cart-empty-message').classList.remove('hidden');
-            if (document.getElementById('cart-summary')) document.getElementById('cart-summary').classList.add('hidden');
-        } else {
-            document.getElementById('cart-empty-message').classList.add('hidden');
-            if (document.getElementById('cart-summary')) document.getElementById('cart-summary').classList.remove('hidden');
-        }
+    <div id="privacy-page" class="page-content hidden max-w-4xl mx-auto px-4 py-8">
+        <button class="text-lg font-semibold text-gray-600 mb-6 flex items-center hover:text-ghaba-green transition" onclick="goBack()">
+            &#8592; Back
+        </button>
+        <h2 class="text-4xl font-extrabold text-gray-800 mb-6 border-b-4 border-ghaba-gold pb-2 uppercase">Privacy Policy</h2>
+        <div id="privacy-content" class="bg-white p-6 rounded-xl shadow-2xl space-y-4">
+            </div>
+    </div>
 
-        currentCart.forEach(item => {
-            const itemElement = document.createElement('div');
-            itemElement.className = 'flex items-center space-x-4 p-4 bg-white rounded-xl shadow-md border border-gray-100';
-            itemElement.innerHTML = `
-                <img src="${item.image}" alt="${item.name}" class="w-20 h-20 object-cover rounded-lg flex-shrink-0">
-                <div class="flex-grow flex justify-between items-center">
+    <div id="admin-page" class="page-content hidden max-w-7xl mx-auto px-4 py-8">
+        
+        <div id="admin-login-container" class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl border-4 border-ghaba-green">
+            <h3 class="text-3xl font-bold text-ghaba-green mb-6 text-center">🔐 Admin Login</h3>
+            <p id="admin-login-hint" class="text-center text-sm text-gray-600 mb-6 hidden">Hint: The default password is 'love'</p>
+            <form onsubmit="event.preventDefault(); loginAdmin()">
+                <div class="mb-4">
+                    <label for="admin-password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="admin-password" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                </div>
+                <p id="login-error" class="text-red-500 text-sm mb-4 hidden">Invalid Password. Please try again.</p>
+                <button type="submit" class="w-full bg-ghaba-gold text-gray-900 font-semibold py-3 rounded-lg hover:bg-yellow-500 transition shadow-md">Login</button>
+            </form>
+        </div>
+
+        <div id="admin-content" class="hidden">
+            <button class="text-lg font-semibold text-gray-600 mb-6 flex items-center hover:text-ghaba-green transition" onclick="goBack()">
+                &#8592; Back
+            </button>
+            <h2 class="text-4xl font-extrabold text-gray-800 mb-6 border-b-4 border-ghaba-green pb-2 uppercase">👑 Admin Panel (प्रशासनिक पैनल)</h2>
+
+            <section class="mb-8 p-6 bg-white rounded-xl shadow-2xl border border-ghaba-gold">
+                <h3 class="text-2xl font-bold text-ghaba-green mb-4">🔑 Admin Settings</h3>
+                <div class="space-y-4">
+                    <div class="p-4 border rounded-lg bg-red-50">
+                        <h4 class="font-bold text-red-600 mb-2">Change Admin Password (पासवर्ड बदलें)</h4>
+                        <input type="password" id="new-admin-password" placeholder="New Password" class="w-full p-2 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold mb-2">
+                        <button class="bg-red-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition shadow-md w-full" onclick="changeAdminPassword()">Change Password</button>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="mb-8 p-6 bg-white rounded-xl shadow-2xl border border-ghaba-gold">
+                <h3 class="text-2xl font-bold text-ghaba-green mb-4">📝 Content Editor (पेज कंटेंट)</h3>
+                <div class="space-y-6">
+                    <div class="p-4 border rounded-lg bg-gray-50">
+                        <h4 class="font-bold text-gray-800 mb-2">Contact Us Page Content</h4>
+                        <textarea id="contact-us-content-input" rows="5" class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold"></textarea>
+                        <button class="mt-2 w-full bg-ghaba-gold text-gray-900 font-semibold py-2 rounded-lg hover:bg-yellow-500 transition shadow-md" onclick="savePageContent('contact')">Save Contact Content</button>
+                    </div>
+                    <div class="p-4 border rounded-lg bg-gray-50">
+                        <h4 class="font-bold text-gray-800 mb-2">Privacy Policy Page Content</h4>
+                        <textarea id="privacy-policy-content-input" rows="5" class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold"></textarea>
+                        <button class="mt-2 w-full bg-ghaba-gold text-gray-900 font-semibold py-2 rounded-lg hover:bg-yellow-500 transition shadow-md" onclick="savePageContent('privacy')">Save Privacy Policy Content</button>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="mb-8 p-6 bg-white rounded-xl shadow-2xl border border-ghaba-gold">
+                <h3 class="text-2xl font-bold text-ghaba-green mb-4">💳 UPI / QR Code Management (भुगतान प्रबंधन)</h3>
+                <div id="admin-form-upi-qr" class="space-y-4 p-4 border rounded-lg bg-gray-50">
+                    <p class="text-gray-600 font-semibold">UPI ID और QR Code इमेज को अपडेट करें:</p>
+                    
                     <div>
-                        <p class="font-bold text-lg text-gray-900">${item.name}</p>
-                        <p class="text-ghaba-green font-bold text-md">₹${item.price.toFixed(2)}</p>
-                        <button class="text-sm text-red-500 mt-2 hover:text-red-700" onclick="removeFromCart('${item.id}')">Remove</button>
+                        <label for="upi-id-input" class="block text-sm font-medium text-gray-700 mb-1">UPI ID (e.g., yourname@bank)</label>
+                        <input type="text" id="upi-id-input" placeholder="Enter UPI ID here..." class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
                     </div>
-                    <div class="flex flex-col items-end">
-                        <div class="flex items-center w-28 border border-gray-300 rounded-md overflow-hidden mb-2">
-                            <button class="p-2 text-gray-600 hover:bg-gray-100 transition text-sm" onclick="updateCartQuantity('${item.id}', ${item.quantity - 1})">-</button>
-                            <input type="number" value="${item.quantity}" min="1" class="w-full text-center text-sm border-x p-2 focus:outline-none" onchange="updateCartQuantity('${item.id}', this.value)">
-                            <button class="p-2 text-gray-600 hover:bg-gray-100 transition text-sm" onclick="updateCartQuantity('${item.id}', ${item.quantity + 1})">+</button>
+                    
+                    <div>
+                        <label for="qr-code-url-input" class="block text-sm font-medium text-gray-700 mt-2 mb-1">1. Static QR Code Image URL (Optional)</label>
+                        <input type="text" id="qr-code-url-input" placeholder="Paste static QR image URL here..." class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                    </div>
+                    <div>
+                        <label for="qr-code-file-input" class="block text-sm font-medium text-gray-700 mt-2 mb-1">2. OR Upload QR Code Image File (Optional)</label>
+                        <input type="file" id="qr-code-file-input" accept="image/*" class="w-full text-sm mt-2">
+                        <p class="text-xs text-gray-500 mt-1">URL को फ़ाइल अपलोड से ज़्यादा प्राथमिकता दी जाएगी।</p>
+                    </div>
+                    <button class="w-full bg-ghaba-gold text-gray-900 font-semibold py-3 rounded-lg hover:bg-yellow-500 transition shadow-md" onclick="saveUpiQrData()">Save UPI/QR Settings</button>
+                </div>
+            </section>
+
+            <section class="mb-8 p-6 bg-white rounded-xl shadow-2xl border border-ghaba-gold">
+                <h3 class="text-2xl font-bold text-ghaba-green mb-4">🛠️ Hero Image Updater (हीरो इमेज अपडेटर - URL/File)</h3>
+                <div id="admin-form-hero" class="space-y-4 p-4 border rounded-lg bg-gray-50">
+                    <p class="text-gray-600 font-semibold">हीरो इमेज अपडेट करें (URL या फ़ाइल अपलोड):</p>
+                    
+                    <div>
+                        <label id="label-hero-1" class="editable-label block text-sm font-medium text-gray-700 mb-1" onclick="changeHeroLabel('hero-1')">Festive Sale Image (URL/File)</label>
+                        <input type="text" id="hero-img-url-1" placeholder="Paste URL here..." class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        <input type="file" id="hero-img-file-1" accept="image/*" class="w-full text-sm mt-2">
+                    </div>
+                    
+                    <div>
+                        <label id="label-hero-2" class="editable-label block text-sm font-medium text-gray-700 mb-1" onclick="changeHeroLabel('hero-2')">Model Collection Image (URL/File)</label>
+                        <input type="text" id="hero-img-url-2" placeholder="Paste URL here..." class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        <input type="file" id="hero-img-file-2" accept="image/*" class="w-full text-sm mt-2">
+                    </div>
+
+                    <button class="w-full bg-ghaba-gold text-gray-900 font-semibold py-3 rounded-lg hover:bg-yellow-500 transition shadow-md" onclick="saveImageUrls()">Save and Update Hero Images</button>
+                </div>
+            </section>
+
+            <section class="mb-8 p-6 bg-white rounded-xl shadow-2xl border border-ghaba-gold">
+                <h3 class="text-2xl font-bold text-ghaba-green mb-4">🔗 Home Page Link Management (होम पेज लिंक प्रबंधन)</h3>
+                <div id="admin-form-home-links" class="space-y-4 p-4 border rounded-lg bg-gray-50">
+                    <p class="text-gray-600 font-semibold">होम पेज पर दिखने वाले कलेक्शन लिंक्स को अपडेट करें:</p>
+                    
+                    <div>
+                        <label for="home-link-1-label" class="block text-sm font-medium text-gray-700 mb-1">Link 1 Label (Best Seller)</label>
+                        <input type="text" id="home-link-1-label" placeholder="e.g., Best Seller Jewels" class="w-full p-3 border rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        <label for="home-link-1-image" class="block text-sm font-medium text-gray-700 mt-2 mb-1">Link 1 Image URL</label>
+                        <input type="text" id="home-link-1-image" placeholder="Paste image URL here..." class="w-full p-3 border rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                    </div>
+                    
+                    <div>
+                        <label for="home-link-2-label" class="block text-sm font-medium text-gray-700 mb-1">Link 2 Label (Necklaces)</label>
+                        <input type="text" id="home-link-2-label" placeholder="e.g., Necklaces Collection" class="w-full p-3 border rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        <label for="home-link-2-image" class="block text-sm font-medium text-gray-700 mt-2 mb-1">Link 2 Image URL</label>
+                        <input type="text" id="home-link-2-image" placeholder="Paste image URL here..." class="w-full p-3 border rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                    </div>
+
+                    <button class="w-full bg-ghaba-gold text-gray-900 font-semibold py-3 rounded-lg hover:bg-yellow-500 transition shadow-md" onclick="saveHomeLinks()">Save and Update Home Links</button>
+                </div>
+            </section>
+
+            <section class="mb-8 p-6 bg-white rounded-xl shadow-2xl border border-ghaba-green">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-2xl font-bold text-ghaba-green">💎 Product Management (उत्पाद प्रबंधन)</h3>
+                    <button class="bg-ghaba-green text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-800 transition shadow-md" onclick="openProductEditForm(null)">
+                        + Add New Product (नया उत्पाद जोड़ें)
+                    </button>
+                </div>
+                <p class="text-sm text-gray-600 mb-4">You can edit or delete existing products here. (आप यहां मौजूदा उत्पादों को संपादित या हटा सकते हैं।)</p>
+                <div id="product-management-list" class="space-y-4">
+                    </div>
+            </section>
+            <section class="p-6 bg-white rounded-xl shadow-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-2xl font-bold text-ghaba-green">📦 Customer Orders (ग्राहक के ऑर्डर)</h3>
+                    <button onclick="clearAllOrders()" class="text-red-500 hover:text-red-700 text-sm font-medium">Clear All Orders</button>
+                </div>
+                <p class="text-sm text-gray-600 mb-4">Showing simulated orders stored in your browser's local storage.</p>
+                <div id="orders-list" class="space-y-4">
+                    </div>
+            </section>
+            </div>
+    </div>
+    
+    <div id="product-modal" class="fixed inset-0 z-50 hidden" style="background-color: rgba(0, 0, 0, 0.7);">
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white rounded-xl shadow-2xl p-6 overflow-y-auto max-h-screen">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h2 id="product-modal-title" class="text-2xl font-bold text-ghaba-green">Add New Product</h2>
+                <button class="text-3xl text-gray-600 hover:text-red-500 transition" onclick="document.getElementById('product-modal').classList.add('hidden')">&times;</button>
+            </div>
+            <form id="product-edit-form" onsubmit="event.preventDefault(); saveProduct();">
+                <input type="hidden" id="edit-product-id">
+
+                <div class="space-y-4">
+                    <div>
+                        <label for="edit-name" class="block text-sm font-medium text-gray-700">Product Name (उत्पाद का नाम)</label>
+                        <input type="text" id="edit-name" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="edit-price" class="block text-sm font-medium text-gray-700">Selling Price (₹)</label>
+                            <input type="number" id="edit-price" step="0.01" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
                         </div>
-                        <p class="font-bold text-gray-800">Total: ₹${(item.price * item.quantity).toFixed(2)}</p>
+                        <div>
+                            <label for="edit-original-price" class="block text-sm font-medium text-gray-700">Original Price (Discount Price - ₹)</label>
+                            <input type="number" id="edit-original-price" step="0.01" class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="edit-desc" class="block text-sm font-medium text-gray-700">Description (विवरण)</label>
+                        <textarea id="edit-desc" rows="3" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold"></textarea>
+                    </div>
+
+                    <div>
+                        <label for="edit-image-url" class="block text-sm font-medium text-gray-700">Image URL (इमेज URL)</label>
+                        <input type="text" id="edit-image-url" placeholder="Paste image URL here..." class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                    </div>
+                    <div>
+                        <label for="edit-image-file" class="block text-sm font-medium text-gray-700">Image File Upload (फ़ाइल अपलोड)</label>
+                        <input type="file" id="edit-image-file" accept="image/*" class="w-full text-sm mt-2">
+                        <p class="text-xs text-red-500 mt-1">Note: Uploaded file will override URL.</p>
                     </div>
                 </div>
-            `;
-            cartList.appendChild(itemElement);
-        });
-    }
-}
 
-function addToCart(productId, quantity) {
-    const product = initialProducts.find(p => p.id === productId);
-    if (!product) return;
-
-    const qty = parseInt(quantity, 10);
-    if (qty < 1 || isNaN(qty)) return;
-
-    const existingItemIndex = currentCart.findIndex(item => item.id === productId);
-
-    if (existingItemIndex !== -1) {
-        currentCart[existingItemIndex].quantity += qty;
-    } else {
-        currentCart.push({
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            image: product.image,
-            quantity: qty
-        });
-    }
+                <button type="submit" class="w-full bg-ghaba-gold text-gray-900 font-semibold py-3 rounded-xl hover:bg-yellow-500 transition shadow-lg text-lg mt-6">
+                    💾 Save Product (उत्पाद सहेजें)
+                </button>
+            </form>
+        </div>
+    </div>
     
-    saveCart();
-    updateCartDisplay(); 
-    const messageElement = document.getElementById('cart-confirm-message');
-    messageElement.classList.remove('hidden');
-    setTimeout(() => { messageElement.classList.add('hidden'); }, 3000);
-}
-
-function updateCartQuantity(productId, newQty) {
-    const qty = parseInt(newQty, 10);
-    const itemIndex = currentCart.findIndex(item => item.id === productId);
-    if (itemIndex === -1) return;
-
-    if (qty < 1 || isNaN(qty)) {
-        currentCart.splice(itemIndex, 1);
-    } else {
-        currentCart[itemIndex].quantity = qty;
-    }
-
-    saveCart();
-    updateCartDisplay();
-}
-
-function removeFromCart(productId) {
-    const itemIndex = currentCart.findIndex(item => item.id === productId);
-    if (itemIndex !== -1) {
-        currentCart.splice(itemIndex, 1);
-        saveCart();
-        updateCartDisplay();
-    }
-}
-
-function setupCheckoutPage() {
-    const { subtotal, total } = calculateCartTotal();
-    
-    if (total === 0) {
-        alert("Your cart is empty. Please add items to proceed.");
-        showPage('cart-page');
-        return;
-    }
-
-    document.getElementById('checkout-summary-item-count').textContent = currentCart.reduce((sum, item) => sum + item.quantity, 0);
-    document.getElementById('checkout-summary-subtotal').textContent = '₹' + subtotal.toFixed(2);
-    document.getElementById('checkout-summary-total').textContent = '₹' + total.toFixed(2);
-    document.getElementById('checkout-submit-total').textContent = '₹' + total.toFixed(2);
-    
-    document.getElementById('checkout-qr-section').classList.add('hidden');
-    document.getElementById('checkout-submit-btn').classList.remove('hidden');
-}
-
-let timeRemaining = 180;
-
-function startQrTimer() {
-    timeRemaining = 180;
-    const timerElement = document.getElementById('checkout-qr-timer');
-    if (qrTimerInterval) clearInterval(qrTimerInterval);
-
-    function updateTimer() {
-        const minutes = Math.floor(timeRemaining / 60);
-        const seconds = timeRemaining % 60;
-        timerElement.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    <div id="checkout-page" class="page-content hidden max-w-3xl mx-auto px-4 py-8">
+        <button class="text-lg font-semibold text-gray-600 mb-6 flex items-center hover:text-ghaba-green transition" onclick="goBack()">
+            &#8592; Back to Cart
+        </button>
+        <h2 class="text-4xl font-extrabold text-gray-800 mb-6 border-b-4 border-ghaba-gold pb-2 uppercase">Checkout (भुगतान)</h2>
         
-        if (timeRemaining <= 0) {
-            clearInterval(qrTimerInterval);
-            alert('Payment session expired. Please try again.');
+        <div class="bg-white p-8 rounded-xl shadow-2xl space-y-8">
+            <form id="checkout-form" onsubmit="event.preventDefault(); handleCheckoutSubmit(this);">
+                
+                <div class="border-b pb-6">
+                    <h3 class="text-2xl font-bold text-ghaba-green mb-4 flex items-center">
+                        <span class="bg-ghaba-gold text-gray-900 w-8 h-8 flex items-center justify-center rounded-full mr-3 text-lg font-extrabold">1</span>
+                        Shipping Address (शिपिंग पता)
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="checkout-name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                            <input type="text" id="checkout-name" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        </div>
+                        <div>
+                            <label for="checkout-phone" class="block text-sm font-medium text-gray-700">Phone Number (मोबाइल नंबर)</label>
+                            <input type="tel" id="checkout-phone" pattern="[0-9]{10}" title="Ten digits code" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        </div>
+                        <div>
+                            <label for="checkout-email" class="block text-sm font-medium text-gray-700">Email Address (ईमेल)</label>
+                            <input type="email" id="checkout-email" placeholder="Optional" class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        </div>
+                        <div>
+                            <label for="checkout-address" class="block text-sm font-medium text-gray-700">Full Address (पूरा पता)</label>
+                            <textarea id="checkout-address" rows="3" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold"></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="checkout-city" class="block text-sm font-medium text-gray-700">City</label>
+                                <input type="text" id="checkout-city" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                            </div>
+                            <div>
+                                <label for="checkout-pincode" class="block text-sm font-medium text-gray-700">Pincode (पिन कोड)</label>
+                                <input type="text" id="checkout-pincode" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-b py-6">
+                    <h3 class="text-2xl font-bold text-ghaba-green mb-4 flex items-center">
+                        <span class="bg-ghaba-gold text-gray-900 w-8 h-8 flex items-center justify-center rounded-full mr-3 text-lg font-extrabold">2</span>
+                        Order Summary (ऑर्डर सारांश)
+                    </h3>
+                    <div id="checkout-items-list" class="space-y-2 mb-4 p-4 bg-gray-50 rounded-lg border">
+                         </div>
+                    
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-sm text-gray-600">
+                            <span>Items Subtotal:</span>
+                            <span id="checkout-subtotal">Rs. 0.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm text-green-600 font-semibold">
+                            <span>Shipping:</span>
+                            <span>FREE</span>
+                        </div>
+                        <div class="flex justify-between font-bold text-xl mt-3 text-ghaba-green border-t border-dashed pt-3">
+                            <span>Total Payable:</span>
+                            <span id="checkout-total">Rs. 0.00</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="py-6">
+                    <h3 class="text-2xl font-bold text-ghaba-green mb-4 flex items-center">
+                        <span class="bg-ghaba-gold text-gray-900 w-8 h-8 flex items-center justify-center rounded-full mr-3 text-lg font-extrabold">3</span>
+                        Payment Method (भुगतान विकल्प)
+                    </h3>
+                    <div class="space-y-4">
+                         <label class="flex flex-col p-4 border-2 border-ghaba-green rounded-xl bg-green-50 cursor-pointer transition shadow-md hover:shadow-lg">
+                            <div class="flex items-center">
+                                <input type="radio" name="payment-method" value="online" checked class="h-5 w-5 text-ghaba-green focus:ring-ghaba-green">
+                                <span class="ml-3 font-semibold text-gray-900 text-lg">Online Payment (UPI/Card/Netbanking) - Recommended</span>
+                            </div>
+                            <div class="flex space-x-2 mt-2 ml-8 text-xs text-gray-600">
+                                <span class="bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full font-medium">PhonePe</span>
+                                <span class="text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full font-medium">Paytm</span>
+                                <span class="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-medium">UPI</span>
+                                <span class="bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full font-medium">Card</span>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <div id="checkout-qr-section" class="bg-yellow-50 p-6 rounded-xl shadow-inner border border-yellow-200 mb-8 text-center hidden">
+                        <h3 class="font-bold text-xl text-gray-900 mb-3 flex items-center justify-center">
+                            <span class="text-4xl mr-2">&#128247;</span> Scan Any UPI App
+                        </h3>
+                        <div id="checkout-upi-logos" class="flex justify-center space-x-4 mb-4">
+                            <span class="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full font-medium">PhonePe</span>
+                            <span class="text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full font-medium">Paytm</span>
+                            <span class="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-medium">UPI</span>
+                        </div>
+
+                        <img id="checkout-upi-qr-code" src="https://placehold.co/200x200?text=Scan+QR+Code" alt="UPI QR Code" class="w-48 h-48 mx-auto rounded-lg border-4 border-white shadow-xl">
+                        <p class="text-sm mt-3 text-gray-700">Scan to pay: <span class="font-bold text-xl text-red-600" id="checkout-qr-payment-amount">Rs. 0.00</span></p>
+                        <p class="text-sm mt-1 text-gray-700">Scan to pay directly! (सीधे भुगतान के लिए स्कैन करें)</p>
+                        <p class="text-lg font-bold text-red-600 mt-4">Time Remaining: <span id="checkout-qr-timer">3:00</span></p>
+                        <p class="text-sm mt-4 text-gray-800 font-semibold">After payment, <button type="button" onclick="confirmPayment()" class="text-ghaba-green hover:underline">Click Here to Confirm Order</button> (भुगतान के बाद ऑर्डर की पुष्टि करें)</p>
+                    </div>
+                </div>
+                
+                <button type="submit" class="w-full bg-ghaba-green text-white font-semibold py-4 rounded-xl hover:bg-green-800 transition shadow-lg text-xl mt-6" id="checkout-submit-btn">
+                    ✅ Pay Now & Place Order (भुगतान करें) - <span id="checkout-submit-total">Rs. 0.00</span>
+                </button>
+                
+            </form>
+        </div>
+    </div>
+    
+    <div id="cart-page" class="page-content hidden max-w-7xl mx-auto px-4 py-8">
+        <button class="text-lg font-semibold text-gray-600 mb-6 flex items-center hover:text-ghaba-green transition" onclick="goBack()">
+            &#8592; Continue Shopping
+        </button>
+        <h2 class="text-4xl font-extrabold text-gray-800 mb-6 border-b-4 border-ghaba-gold pb-2 uppercase flex items-center">
+            &#128722; Your Shopping Cart (<span id="cart-page-count">0</span> items)
+        </h2>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-2xl">
+                 <div id="cart-confirm-message" class="flex items-center p-3 bg-green-100 text-green-700 rounded-lg mb-4 font-semibold shadow-md hidden">
+                    &#10003; <span class="ml-2">Item added to your cart (कार्ट में जोड़ा गया)</span>
+                </div>
+                <div id="cart-items-list" class="space-y-6">
+                    </div>
+            </div>
+
+            <div class="lg:col-span-1">
+                <div class="bg-gray-50 p-6 rounded-xl shadow-2xl sticky top-20 border border-gray-200">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Order Summary</h3>
+                    
+                    <div class="space-y-2 mb-6 text-gray-700">
+                        <div class="flex justify-between">
+                            <span>Subtotal (<span id="cart-summary-item-count">0</span> items):</span>
+                            <span id="cart-summary-subtotal" class="font-medium">Rs. 0.00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Shipping:</span>
+                            <span class="font-medium text-green-600">FREE</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between font-bold text-2xl text-ghaba-green border-t pt-4">
+                        <span>Total:</span>
+                        <span id="cart-summary-total">Rs. 0.00</span>
+                    </div>
+
+                    <button class="w-full bg-ghaba-green text-white font-semibold py-3 rounded-xl hover:bg-green-800 transition shadow-lg text-lg mt-6" id="checkout-btn-full" onclick="setupCheckoutPage(); showPage('checkout-page');">
+                        Proceed to Checkout (भुगतान के लिए आगे बढ़ें)
+                    </button>
+                    
+                    <button class="w-full border border-gray-400 text-gray-800 font-semibold py-3 rounded-xl hover:bg-gray-100 transition shadow-lg text-lg mt-3" onclick="goBack()">
+                        Continue Shopping
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="bg-gray-800 text-white p-6 mt-10">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm">
+            <div class="mb-4 md:mb-0 text-center md:text-left">
+                <p>&copy; 2025 GHABA - Queenling It. All Rights Reserved.</p>
+                <p class="text-xs text-gray-400 mt-1">Made with elegance and care.</p>
+            </div>
+            <div class="flex items-center space-x-6">
+                <a href="#" onclick="showPage('contact-page'); renderPageContent('contact');" class="hover:text-ghaba-gold transition">Contact Us</a>
+                <a href="#" onclick="showPage('privacy-page'); renderPageContent('privacy');" class="hover:text-ghaba-gold transition">Privacy Policy</a>
+                
+                <a href="#admin" onclick="showPage('admin-page'); renderProductManagementList();" class="flex items-center space-x-1 text-xs px-3 py-1 bg-ghaba-gold text-gray-900 font-bold rounded-full shadow-lg transition hover:bg-yellow-400">
+                    <span class="text-base">👑</span>
+                    <span>.</span>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- Core Data/State (Simulated) ---
+        let currentPage = 'home-page';
+        let currentProductId = 1;
+        let qrTimerInterval;
+        
+        // Load data from Local Storage or use default values
+        let adminPassword = localStorage.getItem('ghabaAdminPassword') || 'love'; // Load dynamic password
+        let cart = JSON.parse(localStorage.getItem('ghabaCart')) || [];
+        let products = JSON.parse(localStorage.getItem('ghabaProducts')) || [
+            { id: 1, name: "Gold Plated Necklace", price: 1299.00, originalPrice: 1599.00, desc: "A stunning gold-plated necklace set, perfect for festive occasions. Made with high-quality brass and fine finishing.", img: "https://placehold.co/400x400/806440/ffffff?text=Product+1" },
+            { id: 2, name: "Elegant Stud Earrings", price: 499.00, originalPrice: 699.00, desc: "Simple yet elegant stud earrings with a cubic zirconia stone. Ideal for daily wear.", img: "https://placehold.co/400x400/806440/ffffff?text=Product+2" },
+            { id: 3, name: "Silver Oxidized Bangle", price: 799.00, originalPrice: 999.00, desc: "Traditional silver oxidized bangle with intricate design. A must-have for ethnic wear.", img: "https://placehold.co/400x400/806440/ffffff?text=Product+3" },
+            { id: 4, name: "Pearl Drop Earrings", price: 599.00, originalPrice: 799.00, desc: "Classic pearl drop earrings that complement any formal attire.", img: "https://placehold.co/400x400/806440/ffffff?text=Product+4" }
+        ];
+        let upiQrData = JSON.parse(localStorage.getItem('ghabaUpiQr')) || { upiId: 'ghaba@upi', qrUrl: 'https://placehold.co/200x200?text=Scan+QR+Code' };
+        let orders = JSON.parse(localStorage.getItem('ghabaOrders')) || [];
+        let pageContents = JSON.parse(localStorage.getItem('ghabaPageContents')) || {
+            contact: '<p class="text-lg">Thank you for reaching out! Please use the contact details below.</p><ul><li>Email: support@ghaba.com</li><li>Phone: +91 98765 43210</li></ul>',
+            privacy: '<p class="text-lg">This is our Privacy Policy. We value your privacy and only use Local Storage for data simulation.</p>'
+        };
+
+        // --- Utility Functions ---
+        function saveProducts() {
+            localStorage.setItem('ghabaProducts', JSON.stringify(products));
+            renderProductManagementList();
+            renderProducts(); 
+        }
+        function saveCart() {
+            localStorage.setItem('ghabaCart', JSON.stringify(cart));
+            updateCartDisplay();
+        }
+        function saveOrders() {
+            localStorage.setItem('ghabaOrders', JSON.stringify(orders));
+            renderOrdersList();
+        }
+        function savePageContents() {
+            localStorage.setItem('ghabaPageContents', JSON.stringify(pageContents));
+        }
+
+        // --- Navigation and Page Control ---
+        function showPage(pageId) {
+            document.querySelectorAll('.page-content').forEach(page => {
+                page.classList.add('hidden');
+            });
+            document.getElementById(pageId).classList.remove('hidden');
+            currentPage = pageId;
+            if (pageId !== 'checkout-page' && qrTimerInterval) {
+                 clearInterval(qrTimerInterval);
+                 document.getElementById('checkout-qr-section').classList.add('hidden');
+                 document.getElementById('checkout-submit-btn').classList.remove('hidden');
+            }
+            window.scrollTo(0, 0);
+        }
+
+        function goBack() {
+            // Enhanced goBack logic
+            if (currentPage === 'collections-page') {
+                showPage('home-page');
+            } else if (currentPage === 'product-page') {
+                showPage('collections-page');
+                renderProducts();
+            } else if (currentPage === 'cart-page') {
+                showPage('collections-page');
+                renderProducts();
+            } else if (currentPage === 'checkout-page') {
+                showPage('cart-page');
+            } else if (currentPage === 'admin-page') {
+                 // If already in admin content, go to home, else show login screen (optional)
+                document.getElementById('admin-content').classList.contains('hidden') ? showPage('home-page') : showPage('home-page');
+            } else {
+                 showPage('home-page'); // Default fallback
+            }
+        }
+        
+        // --- Search Functionality ---
+        function toggleSearchInput() {
+            const searchInput = document.getElementById('search-input');
+            searchInput.classList.toggle('hidden');
+            if (!searchInput.classList.contains('hidden')) {
+                searchInput.focus();
+            }
+            if (searchInput.classList.contains('hidden')) {
+                searchInput.value = '';
+                renderProducts(); 
+            }
+        }
+
+        function searchProducts(query) {
+            const lowerCaseQuery = query.toLowerCase();
+            if (currentPage !== 'collections-page') {
+                showPage('collections-page');
+            }
+
+            const filteredProducts = products.filter(p => 
+                p.name.toLowerCase().includes(lowerCaseQuery) ||
+                p.desc.toLowerCase().includes(lowerCaseQuery)
+            );
+            
+            renderProducts(filteredProducts);
+        }
+        
+        // --- Product Sorting/Display Logic (FIXED: Added sorting) ---
+        let currentProductsData = [...products];
+
+        function sortProducts(sortOption) {
+            let sortedProducts = [...products];
+            
+            switch (sortOption) {
+                case 'price-asc':
+                    sortedProducts.sort((a, b) => a.price - b.price);
+                    break;
+                case 'price-desc':
+                    sortedProducts.sort((a, b) => b.price - a.price);
+                    break;
+                case 'name-asc':
+                    sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
+                    break;
+                case 'default':
+                default:
+                    // Keep the default load order (based on ID, simulated here by re-cloning original array)
+                    sortedProducts = JSON.parse(localStorage.getItem('ghabaProducts')) || products;
+                    break;
+            }
+            currentProductsData = sortedProducts;
+            renderProducts(currentProductsData);
+        }
+
+        function renderProducts(productArray = products) {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = '';
+            
+            document.getElementById('product-count').textContent = productArray.length;
+
+            if (productArray.length === 0) {
+                 grid.innerHTML = '<p class="text-center text-gray-500 py-10 w-full col-span-full">No products found matching your criteria. (आपके मानदंडों से मेल खाने वाला कोई उत्पाद नहीं मिला।)</p>';
+                 return;
+            }
+
+            productArray.forEach(product => {
+                const discount = product.originalPrice > product.price ? 
+                    `<span class="text-sm line-through text-gray-400 ml-2">Rs. ${product.originalPrice.toFixed(2)}</span>` : '';
+                const discountTag = product.originalPrice > product.price ? 
+                    `<span class="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">SALE</span>` : '';
+
+                grid.innerHTML += `
+                    <div class="product-card product-${product.id} bg-white rounded-xl shadow-xl overflow-hidden group cursor-pointer hover:shadow-2xl transition duration-300" onclick="updateProductPage(${product.id}); showPage('product-page');">
+                        <div class="relative overflow-hidden">
+                            ${discountTag}
+                            <img src="${product.img}" alt="${product.name}" class="w-full h-64 object-cover transition duration-500 group-hover:scale-105">
+                            <button class="absolute bottom-0 left-0 w-full bg-ghaba-green text-white py-2 text-sm font-semibold opacity-0 group-hover:opacity-100 transition duration-300">
+                                View Product
+                            </button>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-semibold text-gray-800 truncate">${product.name}</h3>
+                            <div class="mt-1 flex items-center">
+                                <p class="text-lg font-bold text-ghaba-green">Rs. ${product.price.toFixed(2)}</p>
+                                ${discount}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        // --- Product Page Qty Update Function ---
+        function updateQty(change) {
+            const qtyInput = document.getElementById('qty-input');
+            let currentQty = parseInt(qtyInput.value);
+            currentQty += change;
+            if (currentQty < 1) {
+                currentQty = 1;
+            }
+            qtyInput.value = currentQty;
+            document.getElementById('qr-section').classList.add('hidden');
+        }
+
+        function updateProductPage(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) {
+                alert("Product not found!");
+                showPage('collections-page');
+                return;
+            }
+            currentProductId = productId;
+            document.getElementById('product-image').src = product.img;
+            document.getElementById('product-detail-title').textContent = product.name;
+            document.getElementById('product-detail-price').textContent = 'Rs. ' + product.price.toFixed(2);
+            document.getElementById('product-detail-original-price').textContent = 'Rs. ' + product.originalPrice.toFixed(2);
+            document.getElementById('product-detail-desc').textContent = product.desc;
+            document.getElementById('qr-section').classList.add('hidden'); 
+            document.getElementById('qty-input').value = 1;
+        }
+
+        // --- Cart Functions ---
+        function addToCart(productId, qty) {
+            qty = parseInt(qty);
+            const product = products.find(p => p.id === productId);
+            if (!product || qty < 1) return;
+
+            const existingItemIndex = cart.findIndex(item => item.id === productId);
+
+            if (existingItemIndex !== -1) {
+                cart[existingItemIndex].qty += qty;
+            } else {
+                cart.push({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    img: product.img,
+                    qty: qty
+                });
+            }
+            saveCart();
+            const messageElement = document.getElementById('cart-confirm-message');
+            messageElement.classList.remove('hidden');
+            setTimeout(() => { messageElement.classList.add('hidden'); }, 3000);
+        }
+
+        function updateCartItemQty(index, change) {
+            cart[index].qty += change;
+            if (cart[index].qty <= 0) {
+                cart.splice(index, 1);
+            }
+            saveCart();
+            updateCartDisplay();
+        }
+
+        function removeCartItem(index) {
+            cart.splice(index, 1);
+            saveCart();
+            updateCartDisplay();
+        }
+
+        function calculateTotal() {
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            return { subtotal, total: subtotal };
+        }
+
+        function updateCartDisplay() {
+            const { subtotal, total } = calculateTotal();
+            const cartCountElement = document.getElementById('cart-count');
+            const cartPageCountElement = document.getElementById('cart-page-count');
+            const cartList = document.getElementById('cart-items-list');
+
+            const itemCount = cart.reduce((sum, item) => sum + item.qty, 0);
+            
+            cartCountElement.textContent = itemCount;
+            cartPageCountElement.textContent = itemCount;
+            document.getElementById('cart-summary-item-count').textContent = itemCount;
+            document.getElementById('cart-summary-subtotal').textContent = 'Rs. ' + subtotal.toFixed(2);
+            document.getElementById('cart-summary-total').textContent = 'Rs. ' + total.toFixed(2);
+            
+            cartList.innerHTML = '';
+            if (cart.length === 0) {
+                cartList.innerHTML = '<p class="text-center text-gray-500 py-10">Your cart is empty. Start shopping! (आपका कार्ट खाली है। खरीदारी शुरू करें!)</p>';
+                document.getElementById('checkout-btn-full').disabled = true;
+            } else {
+                document.getElementById('checkout-btn-full').disabled = false;
+                cart.forEach((item, index) => {
+                    cartList.innerHTML += `
+                        <div class="flex items-center space-x-4 border-b pb-4">
+                            <img src="${item.img}" alt="${item.name}" class="w-24 h-24 object-cover rounded-lg shadow">
+                            <div class="flex-grow">
+                                <p class="font-bold text-gray-900">${item.name}</p>
+                                <p class="text-sm text-gray-600">Price: Rs. ${item.price.toFixed(2)}</p>
+                            </div>
+                            <div class="flex flex-col items-end space-y-2">
+                                <div class="flex items-center border rounded-lg overflow-hidden">
+                                    <button class="p-2 text-gray-600 hover:bg-gray-100 transition" onclick="updateCartItemQty(${index}, -1)">-</button>
+                                    <span class="p-2 text-sm font-semibold">${item.qty}</span>
+                                    <button class="p-2 text-gray-600 hover:bg-gray-100 transition" onclick="updateCartItemQty(${index}, 1)">+</button>
+                                </div>
+                                <p class="font-bold text-lg text-ghaba-green">Rs. ${(item.price * item.qty).toFixed(2)}</p>
+                                <button class="text-xs text-red-500 hover:text-red-700" onclick="removeCartItem(${index})">Remove</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        }
+        
+        // --- Checkout Functions ---
+        function setupCheckoutPage() {
+            updateCartDisplay();
+            const { subtotal, total } = calculateTotal();
+            document.getElementById('checkout-subtotal').textContent = 'Rs. ' + subtotal.toFixed(2);
+            document.getElementById('checkout-total').textContent = 'Rs. ' + total.toFixed(2);
+            document.getElementById('checkout-submit-total').textContent = 'Rs. ' + total.toFixed(2);
+            document.getElementById('checkout-qr-payment-amount').textContent = 'Rs. ' + total.toFixed(2);
+            
+            const itemList = document.getElementById('checkout-items-list');
+            itemList.innerHTML = '';
+            if (cart.length === 0) {
+                 itemList.innerHTML = '<p class="text-red-500 font-semibold">Cart is empty. Please add items to proceed.</p>';
+                 document.getElementById('checkout-submit-btn').disabled = true;
+            } else {
+                 document.getElementById('checkout-submit-btn').disabled = false;
+                 cart.forEach(item => {
+                    itemList.innerHTML += `
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-700">${item.name} x ${item.qty}</span>
+                            <span class="font-medium text-gray-800">Rs. ${(item.price * item.qty).toFixed(2)}</span>
+                        </div>
+                    `;
+                 });
+            }
+            
             document.getElementById('checkout-qr-section').classList.add('hidden');
             document.getElementById('checkout-submit-btn').classList.remove('hidden');
-            return;
         }
-        timeRemaining--;
-    }
-    updateTimer();
-    qrTimerInterval = setInterval(updateTimer, 1000);
-}
 
-function showQrCodeForCheckout() {
-    const qrSection = document.getElementById('checkout-qr-section');
-    const { total } = calculateCartTotal();
-    
-    qrSection.classList.remove('hidden');
-    document.getElementById('checkout-upi-qr-code').src = upiQrData.qrUrl || DEFAULT_QR_URL;
-    document.getElementById('checkout-qr-payment-amount').textContent = '₹' + total.toFixed(2);
-    document.getElementById('checkout-submit-btn').classList.add('hidden');
-    startQrTimer();
-}
 
-function handleCheckoutSubmit(form) {
-    if (form.checkValidity()) {
-        // Collect customer details first
-        const customerDetails = {
-            name: document.getElementById('checkout-name').value.trim(),
-            phone: document.getElementById('checkout-phone').value.trim(),
-            address: document.getElementById('checkout-address').value.trim(),
-            city: document.getElementById('checkout-city').value.trim(),
-            pincode: document.getElementById('checkout-pincode').value.trim()
-        };
-        // Store details temporarily or use them directly
-        window.checkoutDetails = customerDetails;
+        // --- Checkout Validation & QR Code (FIXED: Timer added) ---
+        let timeRemaining = 180; // 3 minutes
+
+        function startQrTimer() {
+            timeRemaining = 180;
+            const timerElement = document.getElementById('checkout-qr-timer');
+            
+            if (qrTimerInterval) clearInterval(qrTimerInterval);
+
+            function updateTimer() {
+                const minutes = Math.floor(timeRemaining / 60);
+                const seconds = timeRemaining % 60;
+                timerElement.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+                if (timeRemaining <= 0) {
+                    clearInterval(qrTimerInterval);
+                    alert('Payment session expired. Please try again.');
+                    document.getElementById('checkout-qr-section').classList.add('hidden');
+                    document.getElementById('checkout-submit-btn').classList.remove('hidden');
+                    return;
+                }
+                timeRemaining--;
+            }
+            
+            updateTimer(); 
+            qrTimerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function handleCheckoutSubmit(form) {
+            if (form.checkValidity()) {
+                showQrCodeForCheckout();
+            } else {
+                form.reportValidity();
+            }
+        }
         
-        // Show QR code for payment
-        showQrCodeForCheckout();
-    } else {
-        form.reportValidity();
-    }
-}
+        function showQrCodeForCheckout() {
+            const qrSection = document.getElementById('checkout-qr-section');
+            const { total } = calculateTotal();
 
-function confirmPayment() {
-    if (qrTimerInterval) clearInterval(qrTimerInterval);
-    
-    const { total } = calculateCartTotal();
-    const customerDetails = window.checkoutDetails; 
-    
-    if (!customerDetails) {
-        alert("Customer details missing. Please re-enter your details.");
-        setupCheckoutPage();
-        return;
-    }
-    
-    placeOrder(customerDetails, total);
-}
+            qrSection.classList.remove('hidden');
 
+            document.getElementById('checkout-upi-qr-code').src = upiQrData.qrUrl || 'https://placehold.co/200x200?text=Scan+QR+Code'; 
+            document.getElementById('checkout-qr-payment-amount').textContent = 'Rs. ' + total.toFixed(2);
 
-// --- FIREBASE DATA MANAGEMENT (C.R.U.D) ---
-
-async function saveProduct() {
-    const editId = document.getElementById('edit-product-id').value;
-    const name = document.getElementById('edit-name').value.trim();
-    const price = parseFloat(document.getElementById('edit-price').value);
-    const originalPrice = parseFloat(document.getElementById('edit-original-price').value) || price;
-    const desc = document.getElementById('edit-desc').value.trim();
-    let imageUrl = document.getElementById('edit-image-url').value.trim();
-    const imageFile = document.getElementById('edit-image-file');
-
-    if (imageFile.files.length > 0) {
-        try {
-             imageUrl = await fileToBase64(imageFile.files[0]); 
-        } catch (error) {
-            console.error("Error reading file:", error);
-            alert("Error reading file! Please try a URL or another file.");
-            return;
+            document.getElementById('checkout-submit-btn').classList.add('hidden');
+            startQrTimer(); // Start the timer
         }
-    }
-    
-    if (!imageUrl) {
-        alert("Image URL or File is required.");
-        return;
-    }
 
-    const productData = {
-        name,
-        price,
-        originalPrice,
-        desc,
-        image: imageUrl,
-    };
+        function confirmPayment() {
+            if (qrTimerInterval) clearInterval(qrTimerInterval);
 
-    try {
-        if (editId) {
-            const productRef = doc(db, COLLECTION.PRODUCTS, editId);
-            await updateDoc(productRef, productData);
-            alert(`Product "${name}" updated successfully in the cloud!`);
-        } else {
-            const productsCollection = collection(db, COLLECTION.PRODUCTS);
-            // Firestore automatically creates the ID for a new document
-            await addDoc(productsCollection, productData);
-            alert(`New Product "${name}" added successfully to the cloud!`);
+            const orderDetails = {
+                id: Date.now(),
+                items: cart,
+                total: calculateTotal().total,
+                customer: {
+                    name: document.getElementById('checkout-name').value,
+                    phone: document.getElementById('checkout-phone').value,
+                    address: document.getElementById('checkout-address').value,
+                },
+                date: new Date().toLocaleString(),
+                status: 'Payment Confirmed / Pending Fulfillment'
+            };
+            
+            orders.unshift(orderDetails);
+            saveOrders();
+
+            alert('Order Placed Successfully! (ऑर्डर सफलतापूर्वक दिया गया!) We will ship to ' + orderDetails.customer.address);
+            
+            cart = [];
+            saveCart();
+            
+            document.getElementById('checkout-form').reset();
+            document.getElementById('checkout-submit-btn').classList.remove('hidden');
+            document.getElementById('checkout-qr-section').classList.add('hidden');
+            
+            showPage('home-page');
         }
-        document.getElementById('product-modal').classList.add('hidden');
-        document.getElementById('product-edit-form').reset();
-    } catch (e) {
-        console.error("Error saving product: ", e);
-        alert("Error saving product to cloud. Check console for details.");
-    }
-}
 
-async function deleteProduct(productId) {
-    if (confirm("Are you sure you want to delete this product?")) {
-        try {
-            const productRef = doc(db, COLLECTION.PRODUCTS, productId);
-            await deleteDoc(productRef);
-            alert("Product deleted successfully from the cloud.");
-        } catch (e) {
-            console.error("Error deleting product: ", e);
-            alert("Error deleting product from cloud. Check console for details.");
+        // --- Admin Functions (FIXED: Login, Password Change, Content Editor) ---
+
+        function loginAdmin() {
+            const password = document.getElementById('admin-password').value;
+            const errorElement = document.getElementById('login-error');
+            if (password === adminPassword) {
+                document.getElementById('admin-login-container').classList.add('hidden');
+                document.getElementById('admin-content').classList.remove('hidden');
+                renderProductManagementList();
+                renderOrdersList();
+                loadPageContentsToAdmin(); // Load existing content
+            } else {
+                errorElement.classList.remove('hidden');
+                alert('Invalid Password!');
+            }
         }
-    }
-}
 
-async function placeOrder(customerDetails, totalAmount) {
-    const newOrder = {
-        timestamp: new Date().toISOString(),
-        customer: customerDetails,
-        total: totalAmount,
-        payment: "Prepaid / Online",
-        status: "New",
-        items: currentCart.map(item => ({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity
-        }))
-    };
-    
-    try {
-        const ordersCollection = collection(db, COLLECTION.ORDERS);
-        await addDoc(ordersCollection, newOrder); 
-
-        currentCart = [];
-        saveCart();
-        updateCartDisplay();
+        function changeAdminPassword() {
+            const newPass = document.getElementById('new-admin-password').value;
+            if (newPass.length < 4) {
+                alert('Password must be at least 4 characters long.');
+                return;
+            }
+            adminPassword = newPass;
+            localStorage.setItem('ghabaAdminPassword', adminPassword);
+            document.getElementById('new-admin-password').value = '';
+            alert('Admin Password updated successfully!');
+        }
         
-        alert(`Order Placed Successfully in Cloud! (ऑर्डर सफलतापूर्वक दिया गया!) \nTotal: ₹${totalAmount.toFixed(2)}\nThank you!`); 
-        showPage('home-page');
-    } catch (e) {
-        console.error("Error placing order: ", e);
-        alert("Error placing order to cloud. Check console for details.");
-    }
-}
+        // --- Page Content Management ---
+        function loadPageContentsToAdmin() {
+            document.getElementById('contact-us-content-input').value = pageContents.contact;
+            document.getElementById('privacy-policy-content-input').value = pageContents.privacy;
+        }
 
-async function clearAllOrders() {
-    if (!confirm("Are you sure you want to clear ALL orders? This action cannot be undone.")) return;
+        function savePageContent(type) {
+            let content;
+            if (type === 'contact') {
+                content = document.getElementById('contact-us-content-input').value;
+                pageContents.contact = content;
+            } else if (type === 'privacy') {
+                content = document.getElementById('privacy-policy-content-input').value;
+                pageContents.privacy = content;
+            }
+            savePageContents();
+            alert(`${type.toUpperCase()} Page content updated!`);
+        }
 
-    try {
-        const ordersCollection = collection(db, COLLECTION.ORDERS);
-        const snapshot = await getDocs(ordersCollection);
+        function renderPageContent(type) {
+            const targetElement = document.getElementById(`${type}-content`);
+            const content = pageContents[type];
+            targetElement.innerHTML = content;
+        }
+
+
+        function saveImageUrls() {
+            alert('Hero Image settings saved (Simulated)!');
+        }
         
-        const batch = writeBatch(db);
-        snapshot.docs.forEach((doc) => {
-            batch.delete(doc.ref);
+        function saveHomeLinks() {
+            alert('Home link settings saved (Simulated)!');
+        }
+        
+        function clearAllOrders() {
+            if (confirm('Are you sure you want to clear ALL orders? This action cannot be undone.')) {
+                orders = [];
+                saveOrders();
+                alert('All orders cleared.');
+            }
+        }
+        
+        function renderOrdersList() {
+            const listContainer = document.getElementById('orders-list');
+            listContainer.innerHTML = '';
+            
+            if (orders.length === 0) {
+                 listContainer.innerHTML = '<p class="text-center text-gray-500 py-4">No orders placed yet.</p>';
+                 return;
+            }
+
+            orders.forEach(order => {
+                listContainer.innerHTML += `
+                    <div class="p-4 bg-gray-100 rounded-lg shadow-sm border border-gray-200">
+                        <p class="font-bold text-lg text-ghaba-green">Order ID: #${order.id}</p>
+                        <p class="text-sm text-gray-700">Customer: ${order.customer.name} | Phone: ${order.customer.phone}</p>
+                        <p class="text-sm text-gray-700">Total: <span class="font-bold">Rs. ${order.total.toFixed(2)}</span> | Date: ${order.date}</p>
+                        <p class="text-sm text-red-600 font-semibold">Status: ${order.status}</p>
+                        <p class="text-xs mt-2 text-gray-500">Items: ${order.items.map(i => `${i.name} (${i.qty})`).join(', ')}</p>
+                    </div>
+                `;
+            });
+        }
+
+
+        function saveUpiQrData() {
+            const upiId = document.getElementById('upi-id-input').value;
+            const qrUrl = document.getElementById('qr-code-url-input').value;
+            
+            upiQrData = { upiId, qrUrl: qrUrl || 'https://placehold.co/200x200?text=Scan+QR+Code' };
+            localStorage.setItem('ghabaUpiQr', JSON.stringify(upiQrData));
+            alert('UPI/QR data saved successfully!');
+        }
+        
+        function openProductEditForm(productId) {
+            const modal = document.getElementById('product-modal');
+            const form = document.getElementById('product-edit-form');
+            form.reset();
+            document.getElementById('edit-product-id').value = '';
+            document.getElementById('product-modal-title').textContent = 'Add New Product';
+
+            if (productId) {
+                const product = products.find(p => p.id === productId);
+                if (product) {
+                    document.getElementById('product-modal-title').textContent = 'Edit Product';
+                    document.getElementById('edit-product-id').value = product.id;
+                    document.getElementById('edit-name').value = product.name;
+                    document.getElementById('edit-price').value = product.price;
+                    document.getElementById('edit-original-price').value = product.originalPrice;
+                    document.getElementById('edit-desc').value = product.desc;
+                    document.getElementById('edit-image-url').value = product.img;
+                }
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function saveProduct() {
+            const id = document.getElementById('edit-product-id').value;
+            const name = document.getElementById('edit-name').value;
+            const price = parseFloat(document.getElementById('edit-price').value);
+            const originalPrice = parseFloat(document.getElementById('edit-original-price').value) || price;
+            const desc = document.getElementById('edit-desc').value;
+            let img = document.getElementById('edit-image-url').value;
+            
+            const fileInput = document.getElementById('edit-image-file');
+            if (fileInput.files.length > 0) {
+                 img = 'https://placehold.co/400x400/303632/ffffff?text=Custom+Product';
+            }
+            
+            if (img === '') {
+                 img = 'https://placehold.co/400x400/969696/ffffff?text=No+Image';
+            }
+
+            if (id) {
+                const index = products.findIndex(p => p.id == id);
+                if (index !== -1) {
+                    products[index] = { id: parseInt(id), name, price, originalPrice, desc, img };
+                }
+            } else {
+                const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+                products.push({ id: newId, name, price, originalPrice, desc, img });
+            }
+            
+            document.getElementById('product-modal').classList.add('hidden');
+            saveProducts();
+            alert('Product saved successfully!');
+        }
+
+        function deleteProduct(productId) {
+            if (confirm('Are you sure you want to delete this product?')) {
+                products = products.filter(p => p.id !== productId);
+                saveProducts();
+                alert('Product deleted successfully.');
+            }
+        }
+        
+        function renderProductManagementList() {
+            const listContainer = document.getElementById('product-management-list');
+            listContainer.innerHTML = '';
+
+            if (products.length === 0) {
+                listContainer.innerHTML = '<p class="text-center text-gray-500 py-4">No products found. Add a new one.</p>';
+                return;
+            }
+
+            products.forEach(product => {
+                listContainer.innerHTML += `
+                    <div class="flex items-center p-4 bg-white border rounded-lg shadow-sm justify-between">
+                        <div class="flex items-center space-x-4">
+                            <img src="${product.img}" alt="${product.name}" class="w-12 h-12 object-cover rounded">
+                            <div>
+                                <p class="font-semibold text-gray-900">${product.name}</p>
+                                <p class="text-sm text-gray-600">ID: ${product.id} | Price: Rs. ${product.price.toFixed(2)}</p>
+                            </div>
+                        </div>
+                        <div class="space-x-2">
+                            <button class="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition" onclick="openProductEditForm(${product.id})">
+                                Edit
+                            </button>
+                            <button class="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition" onclick="deleteProduct(${product.id})">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCartDisplay();
+            // Load Admin UPI data into form
+            document.getElementById('upi-id-input').value = upiQrData.upiId;
+            document.getElementById('qr-code-url-input').value = upiQrData.qrUrl === 'https://placehold.co/200x200?text=Scan+QR+Code' ? '' : upiQrData.qrUrl;
+            
+            // Show the default home page
+            showPage('home-page');
+            
+            // Render default products when collections page loads first time
+            if (currentPage === 'collections-page') {
+                renderProducts();
+            }
+            // Add a hint to the admin login (optional: can be removed completely if preferred)
+            // document.getElementById('admin-login-hint').classList.remove('hidden');
         });
 
-        await batch.commit();
-        alert('All orders cleared from the cloud.');
-    } catch (e) {
-        console.error("Error clearing orders: ", e);
-        alert("Error clearing orders from cloud.");
-    }
-}
+    </script>
+    
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
 
-// --- FIREBASE LISTENERS (Real-time Sync) ---
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+          apiKey: "AIzaSyAuDx79oTuL2-fuwVziGMoh_ta9ZTVuGto",
+          authDomain: "add-app-2f3a3.firebaseapp.com",
+          projectId: "add-app-2f3a3",
+          storageBucket: "add-app-2f3a3.firebasestorage.app",
+          messagingSenderId: "137750127436",
+          appId: "1:137750127436:web:c0e71a4db8c18f4e41a5e9",
+          measurementId: "G-LLEDY8GTB4"
+        };
 
-function listenForProducts() {
-    if (!db) return;
-    const productsCollection = collection(db, COLLECTION.PRODUCTS);
-    onSnapshot(productsCollection, (snapshot) => {
-        initialProducts = snapshot.docs.map(doc => ({
-            id: doc.id, 
-            ...doc.data()
-        }));
-        products = [...initialProducts];
-        renderProductGrid();
-        renderProductManagementList();
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
         
-        if (document.getElementById('product-page').classList.contains('hidden') === false && initialProducts.length > 0) {
-             // If on product page, update it if the product is still available or move to first available product
-             const foundProduct = initialProducts.find(p => p.id === currentProductId);
-             updateProductPage(foundProduct ? currentProductId : (initialProducts[0]?.id || 1));
-        } else if (initialProducts.length > 0) {
-             // Set current product ID to the first product if products are available
-             currentProductId = initialProducts[0].id;
-        }
-        
-        console.log(`Products synced from cloud. Total: ${initialProducts.length}`);
-    }, (error) => {
-        console.error("Error listening to products: ", error);
-        alert("Error loading products from cloud.");
-        initialProducts = [];
-        products = [];
-        renderProductGrid();
-    });
-}
+        console.log("Firebase initialized successfully.");
 
-function listenForSettings() {
-    if (!db) return;
-    const adminDocRef = doc(db, COLLECTION.SETTINGS, "admin");
-    onSnapshot(adminDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-            adminSettings = docSnap.data();
-            ADMIN_PASSWORD = adminSettings.ADMIN_PASSWORD;
-            heroLabels = adminSettings.heroLabels || {};
-            homeLinksData = adminSettings.homeLinksData || {};
-            upiQrData = { upiId: adminSettings.upiId, qrUrl: adminSettings.qrUrl || DEFAULT_QR_URL };
-            
-            loadSavedImages();
-            loadHomeLinks();
-            populateAdminFields();
-            
-            const currentPageId = document.querySelector('.page-content:not(.hidden)')?.id;
-             if (currentPageId === 'contact-page' || currentPageId === 'privacy-page') {
-                 showPage(currentPageId, true); // Rerender content after update
-             }
-            
-            console.log("Settings updated from cloud.");
-        } else {
-             console.warn("Admin settings document not found. Using defaults.");
-        }
-    }, (error) => {
-        console.error("Error listening to settings: ", error);
-        alert("Error loading settings from cloud.");
-    });
-}
-
-function listenForOrders() {
-    if (!db) return;
-    const ordersCollection = collection(db, COLLECTION.ORDERS);
-    // Order by timestamp, descending (newest first)
-    const q = query(ordersCollection, orderBy("timestamp", "desc"));
-    onSnapshot(q, (snapshot) => {
-        orders = snapshot.docs.map(doc => ({
-            id: doc.id, 
-            ...doc.data()
-        }));
-        renderOrdersList();
-        console.log(`Orders synced from cloud. Total: ${orders.length}`);
-    }, (error) => {
-        console.error("Error listening to orders: ", error);
-        alert("Error loading orders from cloud.");
-    });
-}
-
-
-// --- ADMIN MANAGEMENT FUNCTIONS (Cloud Saving) ---
-
-async function saveAdminPassword() {
-    const newPassword = document.getElementById('new-admin-password').value.trim();
-    if (newPassword.length < 4) {
-        alert("Password must be at least 4 characters long.");
-        return;
-    }
-    if (!confirm("Are you sure you want to change the Admin Password?")) return;
-    
-    try {
-        const adminDocRef = doc(db, COLLECTION.SETTINGS, "admin");
-        await updateDoc(adminDocRef, { ADMIN_PASSWORD: newPassword });
-        alert('Admin Password updated successfully in the cloud! Please log in again.');
-        document.getElementById('admin-content').classList.add('hidden');
-        document.getElementById('admin-login-container').classList.remove('hidden');
-        document.getElementById('new-admin-password').value = '';
-    } catch (e) {
-        console.error("Error updating password: ", e);
-        alert("Error updating password to cloud.");
-    }
-}
-
-async function savePageContent(page) {
-    const content = document.getElementById(`${page}-page-content-input`).value.trim();
-    
-    try {
-        const adminDocRef = doc(db, COLLECTION.SETTINGS, "admin");
-        const fieldName = `${page}PageContent`;
-        await updateDoc(adminDocRef, { [fieldName]: content });
-        alert(`${page} Page content updated successfully in the cloud!`);
-    } catch (e) {
-        console.error("Error updating page content: ", e);
-        alert("Error updating page content to cloud.");
-    }
-}
-
-async function saveUpiQrData() {
-    const upiId = document.getElementById('upi-id-input').value.trim();
-    // Allow saving empty string if user wants to remove placeholder QR code
-    const qrUrlInput = document.getElementById('qr-code-url-input').value.trim();
-    const qrUrl = qrUrlInput || DEFAULT_QR_URL;
-    
-    if (!upiId) {
-        alert("UPI ID cannot be empty.");
-        return;
-    }
-
-    try {
-        const adminDocRef = doc(db, COLLECTION.SETTINGS, "admin");
-        await updateDoc(adminDocRef, { upiId, qrUrl });
-        alert('UPI ID and QR Code updated successfully in the cloud!');
-    } catch (e) {
-        console.error("Error updating UPI/QR: ", e);
-        alert("Error updating UPI/QR to cloud.");
-    }
-}
-
-async function saveImageUrls() {
-    const newHeroLabels = {
-        'hero-1': document.getElementById('label-hero-1').textContent.trim().replace(' Image (URL/File)', '').trim(),
-        'hero-2': document.getElementById('label-hero-2').textContent.trim().replace(' Image (URL/File)', '').trim()
-    };
-    let hero1 = document.getElementById('hero-img-url-1').value.trim();
-    let hero2 = document.getElementById('hero-img-url-2').value.trim();
-    
-    const dataToUpdate = {
-        heroLabels: newHeroLabels,
-    };
-
-    const file1 = document.getElementById('hero-img-file-1').files[0];
-    const file2 = document.getElementById('hero-img-file-2').files[0];
-
-    try {
-        // Handle file uploads by converting to Base64
-        if (file1) {
-            hero1 = await fileToBase64(file1);
-        }
-        if (file2) {
-            hero2 = await fileToBase64(file2);
-        }
-        
-        // Only update the URL/Base64 if there is content
-        if (hero1) dataToUpdate.heroImageUrl1 = hero1;
-        if (hero2) dataToUpdate.heroImageUrl2 = hero2;
-
-        
-        const adminDocRef = doc(db, COLLECTION.SETTINGS, "admin");
-        await updateDoc(adminDocRef, dataToUpdate);
-        
-        // Clear file inputs after successful upload
-        document.getElementById('hero-img-file-1').value = '';
-        document.getElementById('hero-img-file-2').value = '';
-
-        alert('Hero images and labels updated successfully in the cloud!');
-    } catch (e) {
-        console.error("Error updating Hero Images: ", e);
-        alert("Error updating Hero Images to cloud.");
-    }
-}
-
-async function saveHomeLinks() {
-    const newHomeLinksData = {
-        'link-1': { 
-            label: document.getElementById('home-link-1-label').value.trim(), 
-            image: document.getElementById('home-link-1-image').value.trim() 
-        },
-        'link-2': { 
-            label: document.getElementById('home-link-2-label').value.trim(), 
-            image: document.getElementById('home-link-2-image').value.trim() 
-        }
-    };
-    
-    try {
-        const adminDocRef = doc(db, COLLECTION.SETTINGS, "admin");
-        await updateDoc(adminDocRef, { homeLinksData: newHomeLinksData });
-        alert('Home Page Links updated successfully in the cloud!');
-    } catch (e) {
-        console.error("Error updating Home Links: ", e);
-        alert("Error updating Home Links to cloud.");
-    }
-}
-
-// --- ADMIN PANEL RENDERING FUNCTIONS ---
-
-function populateAdminFields() {
-    // UPI & QR
-    if (document.getElementById('upi-id-input')) {
-        document.getElementById('upi-id-input').value = upiQrData.upiId || '';
-        document.getElementById('qr-code-url-input').value = upiQrData.qrUrl === DEFAULT_QR_URL ? '' : upiQrData.qrUrl || '';
-    }
-    
-    // Content Editor
-    if (document.getElementById('contact-page-content-input')) {
-        document.getElementById('contact-page-content-input').value = adminSettings.contactPageContent || '';
-        document.getElementById('privacy-page-content-input').value = adminSettings.privacyPageContent || '';
-    }
-    
-    // Hero Labels & Images
-    if (document.getElementById('label-hero-1')) { 
-        // Set visible labels in Admin UI
-        document.getElementById('label-hero-1').textContent = (heroLabels['hero-1'] || 'Festive Sale') + ' Image (URL/File)';
-        document.getElementById('label-hero-2').textContent = (heroLabels['hero-2'] || 'New Arrivals') + ' Image (URL/File)';
-        
-        // Populate URL inputs (Avoid filling with large Base64, which is not editable)
-        if (adminSettings.heroImageUrl1 && adminSettings.heroImageUrl1.length < 500) {
-            document.getElementById('hero-img-url-1').value = adminSettings.heroImageUrl1;
-        } else {
-             document.getElementById('hero-img-url-1').value = '';
-        }
-        if (adminSettings.heroImageUrl2 && adminSettings.heroImageUrl2.length < 500) {
-            document.getElementById('hero-img-url-2').value = adminSettings.heroImageUrl2;
-        } else {
-             document.getElementById('hero-img-url-2').value = '';
-        }
-    }
-
-    // Home Links
-    if (document.getElementById('home-link-1-label')) {
-        document.getElementById('home-link-1-label').value = homeLinksData['link-1'] ? homeLinksData['link-1'].label : '';
-        document.getElementById('home-link-1-image').value = homeLinksData['link-1'] ? homeLinksData['link-1'].image : '';
-        document.getElementById('home-link-2-label').value = homeLinksData['link-2'] ? homeLinksData['link-2'].label : '';
-        document.getElementById('home-link-2-image').value = homeLinksData['link-2'] ? homeLinksData['link-2'].image : '';
-    }
-}
-
-function loadSavedImages() {
-    const hero1 = adminSettings.heroImageUrl1;
-    const hero2 = adminSettings.heroImageUrl2;
-
-    // Update image and label in HOME PAGE
-    if (document.getElementById('img-hero-1')) {
-        try {
-            document.getElementById('text-hero-1').textContent = heroLabels['hero-1'] || 'Festive Sale';
-            document.getElementById('text-hero-2').textContent = heroLabels['hero-2'] || 'New Arrivals';
-        } catch(e) { /* silent fail if element not found */ }
-    }
-
-    if (hero1) document.getElementById('img-hero-1').src = hero1;
-    if (hero2) document.getElementById('img-hero-2').src = hero2;
-}
-
-function loadHomeLinks() {
-    const link1 = homeLinksData['link-1'];
-    if (document.getElementById('img-collection-1')) document.getElementById('img-collection-1').src = link1 ? link1.image : 'https://placehold.co/800x400/808080/ffffff?text=Best+Seller+Jewelry';
-    if (document.getElementById('text-collection-1')) document.getElementById('text-collection-1').textContent = link1 ? link1.label : 'Best seller';
-
-    const link2 = homeLinksData['link-2'];
-    if (document.getElementById('img-collection-2')) document.getElementById('img-collection-2').src = link2 ? link2.image : 'https://placehold.co/800x400/969696/ffffff?text=Necklaces+Collection';
-    if (document.getElementById('text-collection-2')) document.getElementById('text-collection-2').textContent = link2 ? link2.label : 'Necklaces';
-}
-
-function renderProductManagementList() {
-    const listDiv = document.getElementById('product-management-list');
-    if (!listDiv) return;
-
-    listDiv.innerHTML = ''; 
-    if (initialProducts.length === 0) {
-        listDiv.innerHTML = '<p class="text-gray-500 italic">No products in the store. Add a new one! (स्टोर में कोई उत्पाद नहीं है। एक नया जोड़ें!)</p>';
-        return;
-    }
-
-    initialProducts.forEach(product => {
-        const productItem = document.createElement('div');
-        productItem.className = 'flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm';
-        productItem.innerHTML = `
-            <div class="flex items-center space-x-4">
-                <img src="${product.image}" alt="${product.name}" class="w-12 h-12 object-cover rounded">
-                <div>
-                    <p class="font-semibold text-gray-900">${product.name}</p>
-                    <p class="text-sm text-ghaba-green">₹${product.price.toFixed(2)}</p>
-                </div>
-            </div>
-            <div class="space-x-2 flex">
-                <button class="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition" onclick="openProductEditForm('${product.id}')">
-                    Edit
-                </button>
-                <button class="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition" onclick="deleteProduct('${product.id}')">
-                    Delete
-                </button>
-            </div>
-        `;
-        listDiv.appendChild(productItem);
-    });
-}
-
-function openProductEditForm(productId) {
-    const modal = document.getElementById('product-modal');
-    const form = document.getElementById('product-edit-form');
-    const title = document.getElementById('product-modal-title');
-    const saveBtn = document.getElementById('save-product-btn');
-    
-    form.reset(); 
-    document.getElementById('edit-product-id').value = ''; 
-    document.getElementById('edit-image-url').value = ''; // Ensure URL field is cleared
-
-    if (productId) {
-        title.textContent = "Edit Product";
-        saveBtn.textContent = "Save Changes";
-        const product = initialProducts.find(p => p.id === productId);
-        if (product) {
-            document.getElementById('edit-product-id').value = product.id;
-            document.getElementById('edit-name').value = product.name;
-            document.getElementById('edit-price').value = product.price;
-            document.getElementById('edit-original-price').value = product.originalPrice;
-            document.getElementById('edit-desc').value = product.desc;
-            // Only pre-fill URL if it's not a large Base64 image
-            if(product.image && product.image.length < 500) { 
-                document.getElementById('edit-image-url').value = product.image;
-            } 
-        }
-    } else {
-        title.textContent = "Add New Product";
-        saveBtn.textContent = "Add Product";
-    }
-
-    modal.classList.remove('hidden');
-}
-
-function renderOrdersList() {
-    const listContainer = document.getElementById('orders-list');
-    const countElement = document.getElementById('total-orders-count');
-    if (!listContainer || !countElement) return;
-    
-    listContainer.innerHTML = '';
-    countElement.textContent = orders.length;
-
-    if (orders.length === 0) {
-        listContainer.innerHTML = '<p class="text-center text-gray-500 py-4">No orders placed yet.</p>';
-        return;
-    }
-
-    orders.forEach(order => {
-        const orderCard = document.createElement('div');
-        orderCard.className = 'bg-gray-50 p-4 border border-ghaba-green rounded-lg shadow-md';
-        const date = new Date(order.timestamp).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
-        
-        const itemsList = order.items.map(item => `
-            <li class="text-sm text-gray-700">
-                ${item.name} (x${item.quantity}) - ₹${(item.price * item.quantity).toFixed(2)}
-            </li>
-        `).join('');
-
-        orderCard.innerHTML = `
-            <div class="flex justify-between items-start border-b pb-2 mb-2">
-                <h4 class="font-bold text-lg text-ghaba-green">Order ID: #${order.timestamp.slice(-6)}</h4>
-                <span class="text-xs font-medium bg-green-200 text-green-800 px-2 py-0.5 rounded-full">${order.status}</span>
-            </div>
-            <p class="text-sm text-gray-700">Customer: ${order.customer.name} | Phone: ${order.customer.phone}</p>
-            <p class="text-sm text-gray-700">Address: ${order.customer.address}, ${order.customer.city} (${order.customer.pincode})</p>
-            <p class="text-sm text-gray-700">Date: ${date}</p>
-            <p class="font-bold text-gray-900 mt-2">Total: <span class="text-red-600">₹${order.total.toFixed(2)}</span> (${order.payment})</p>
-            <ul class="list-disc list-inside mt-2 text-sm ml-2">
-                ${itemsList}
-            </ul>
-        `;
-        listContainer.appendChild(orderCard);
-    });
-}
-
-function renderAdminPanel() {
-    populateAdminFields();
-    renderProductManagementList();
-    renderOrdersList();
-}
-
-
-// --- Initial Load (Cloud Sync Start) ---
-window.onload = () => {
-    if (db) {
-        // Start all real-time listeners
-        listenForProducts(); 
-        listenForSettings(); 
-        listenForOrders();
-    }
-
-    // Load local cart
-    updateCartDisplay();
-    
-    // Check URL for admin access
-    const path = window.location.pathname.toLowerCase();
-    const hash = window.location.hash.toLowerCase();
-
-    if (path.includes('/admin') || hash.includes('#admin')) {
-        showPage('admin-page');
-    } else {
-        showPage('home-page');
-    }
-};
-
-// Event Listeners for quantity buttons (re-added for clarity)
-document.getElementById('qty-plus').addEventListener('click', () => {
-    document.getElementById('qty-input').value = parseInt(document.getElementById('qty-input').value, 10) + 1;
-    document.getElementById('qr-section').classList.add('hidden');
-});
-
-document.getElementById('qty-minus').addEventListener('click', () => {
-    const input = document.getElementById('qty-input');
-    const current = parseInt(input.value, 10);
-    if (current > 1) {
-        input.value = current - 1;
-    }
-    document.getElementById('qr-section').classList.add('hidden');
-});
-
-document.getElementById('qty-input').addEventListener('change', () => {
-     document.getElementById('qr-section').classList.add('hidden');
-});
-
-function changeHeroLabel(heroId) {
-    const labelElement = document.getElementById(`label-${heroId}`);
-    // Extract current label without the suffix
-    const currentText = (heroLabels[heroId] || 'Hero Label'); 
-    
-    const newText = prompt("Enter new label for this image:", currentText);
-    
-    if (newText !== null && newText.trim() !== "") {
-        // Temporarily update label in Admin UI
-        labelElement.textContent = newText.trim() + ' Image (URL/File)';
-        // Update in global object so saveImageUrls uses the prompt value
-        heroLabels[heroId] = newText.trim();
-    }
-}
+    </script>
+</body>
+</html>
