@@ -6,7 +6,7 @@
     <title>GHABA - Queenling It</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght=700&display=swap" rel="stylesheet">
 </head>
 <body class="min-h-screen">
 
@@ -23,7 +23,7 @@
             <div class="logo-font text-3xl font-bold text-gray-800 cursor-pointer" onclick="showPage('home-page')">GHABA</div>
             <nav class="hidden md:flex space-x-8 text-sm font-medium">
                 <a href="#" onclick="showPage('home-page')" class="text-gray-600 hover:text-ghaba-green transition border-b-2 border-transparent hover:border-ghaba-green pb-1">Home</a>
-                <a href="#" onclick="showPage('collections-page')" class="text-gray-600 hover:text-ghaba-green transition border-b-2 border-transparent hover:border-ghaba-green pb-1">Collections</a>
+                <a href="#" onclick="showPage('collections-page'); renderProducts();" class="text-gray-600 hover:text-ghaba-green transition border-b-2 border-transparent hover:border-ghaba-green pb-1">Collections</a>
                 <a href="#" onclick="showPage('product-page'); updateProductPage(1);" class="text-gray-600 hover:text-ghaba-green transition border-b-2 border-transparent hover:border-ghaba-green pb-1">Product</a>
             </nav>
             <div class="flex items-center space-x-4">
@@ -49,13 +49,13 @@
         </section>
 
         <section class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-            <div class="relative overflow-hidden rounded-xl shadow-2xl cursor-pointer transition hover:shadow-3xl" onclick="showPage('collections-page')">
+            <div class="relative overflow-hidden rounded-xl shadow-2xl cursor-pointer transition hover:shadow-3xl" onclick="showPage('collections-page'); renderProducts();">
                 <img id="img-hero-1" src="https://placehold.co/400x500/504a44/ffffff?text=Festive+Sale" alt="Festive Sale" class="w-full h-auto object-cover transition duration-300 hover:scale-105">
                 <div class="absolute bottom-0 left-0 w-full bg-ghaba-gold bg-opacity-95 p-4 font-extrabold text-gray-900 flex justify-between items-center">
                     <span>Festive sale</span> <span class="text-2xl">&rarr;</span>
                 </div>
             </div>
-            <div class="relative overflow-hidden rounded-xl shadow-2xl cursor-pointer transition hover:shadow-3xl" onclick="showPage('collections-page')">
+            <div class="relative overflow-hidden rounded-xl shadow-2xl cursor-pointer transition hover:shadow-3xl" onclick="showPage('collections-page'); renderProducts();">
                 <img id="img-hero-2" src="https://placehold.co/400x500/504a44/ffffff?text=Model+Collection" alt="Model in Red" class="w-full h-auto object-cover transition duration-300 hover:scale-105">
                 <div class="absolute bottom-0 left-0 w-full bg-ghaba-gold bg-opacity-95 p-4 font-extrabold text-gray-900 flex justify-between items-center">
                     <span>New Arrivals</span> <span class="text-2xl">&rarr;</span>
@@ -64,14 +64,14 @@
         </section>
 
         <section class="mt-8 grid grid-cols-1 gap-4 max-w-4xl mx-auto">
-            <div id="home-collection-link-1" class="collection-link-card bg-gray-100" onclick="showPage('collections-page')">
+            <div id="home-collection-link-1" class="collection-link-card bg-gray-100" onclick="showPage('collections-page'); renderProducts();">
                 <img id="img-collection-1" src="https://placehold.co/800x400/808080/ffffff?text=Best+Seller+Jewelry" alt="Best Seller" class="w-full h-auto object-cover rounded-xl transition duration-300 hover:scale-[1.02]">
                 <div class="card-overlay bg-ghaba-green text-white bg-opacity-95 flex justify-between items-center">
                     <span id="text-collection-1">Best seller</span> <span class="text-2xl">&rarr;</span>
                 </div>
             </div>
 
-            <div id="home-collection-link-2" class="collection-link-card bg-gray-100" onclick="showPage('collections-page')">
+            <div id="home-collection-link-2" class="collection-link-card bg-gray-100" onclick="showPage('collections-page'); renderProducts();">
                 <img id="img-collection-2" src="https://placehold.co/800x400/969696/ffffff?text=Necklaces+Collection" alt="Necklaces" class="w-full h-auto object-cover rounded-xl transition duration-300 hover:scale-[1.02]">
                 <div class="card-overlay bg-ghaba-gold text-gray-900 bg-opacity-95 flex justify-between items-center">
                     <span id="text-collection-2">Necklaces</span> <span class="text-2xl">&rarr;</span>
@@ -87,9 +87,15 @@
         <h2 class="text-4xl font-extrabold text-gray-800 mb-6 border-b-4 border-ghaba-gold pb-2 uppercase">Best Seller Collection</h2>
         
         <div class="flex justify-between items-center mb-6 text-sm text-gray-600">
-            <button class="flex items-center bg-white border border-gray-300 px-4 py-2 rounded-xl font-medium shadow-md hover:bg-gray-100 transition">
-                <span class="mr-2">Filter</span> &#9662;
-            </button>
+            <div class="relative">
+                <select id="sort-by-select" onchange="sortProducts(this.value)" class="flex items-center bg-white border border-gray-300 px-4 py-2 rounded-xl font-medium shadow-md hover:bg-gray-100 transition appearance-none pr-10">
+                    <option value="default">Sort By: Featured</option>
+                    <option value="price-asc">Price: Low to High</option>
+                    <option value="price-desc">Price: High to Low</option>
+                    <option value="name-asc">Alphabetically: A-Z</option>
+                </select>
+                <span class="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">&#9662;</span>
+            </div>
             <span>Total: <span id="product-count"></span> products</span>
         </div>
 
@@ -123,16 +129,16 @@
                 <p class="text-xs text-gray-500 mb-6 font-medium">Shipping calculated at checkout.</p>
 
                 <div class="flex items-center mb-8 w-36 border-2 border-gray-300 rounded-xl overflow-hidden">
-                    <button id="qty-minus" class="p-3 text-gray-600 hover:bg-gray-100 transition focus:outline-none text-xl font-bold">-</button>
+                    <button id="qty-minus" class="p-3 text-gray-600 hover:bg-gray-100 transition focus:outline-none text-xl font-bold" onclick="updateQty(-1)">-</button>
                     <input id="qty-input" type="number" value="1" min="1" class="w-full text-center border-x-2 border-gray-300 focus:outline-none p-2 text-lg font-semibold" onchange="document.getElementById('qr-section').classList.add('hidden')">
-                    <button id="qty-plus" class="p-3 text-gray-600 hover:bg-gray-100 transition focus:outline-none text-xl font-bold">+</button>
+                    <button id="qty-plus" class="p-3 text-gray-600 hover:bg-gray-100 transition focus:outline-none text-xl font-bold" onclick="updateQty(1)">+</button>
                 </div>
                 
                 <div class="space-y-3 mb-8">
                     <button id="add-to-cart-product-btn" class="w-full bg-ghaba-green text-white font-semibold py-4 rounded-xl hover:bg-green-800 transition shadow-lg text-lg" onclick="addToCart(currentProductId, document.getElementById('qty-input').value); showPage('cart-page');">
                         🛒 Add to cart
                     </button>
-                    <button class="w-full bg-ghaba-gold text-gray-900 font-semibold py-4 rounded-xl hover:bg-yellow-400 transition shadow-lg text-lg" onclick="showQrCodeWithPayment()">
+                    <button class="w-full bg-ghaba-gold text-gray-900 font-semibold py-4 rounded-xl hover:bg-yellow-400 transition shadow-lg text-lg" onclick="setupCheckoutPage(); showPage('checkout-page');">
                         Buy it now (अभी खरीदें)
                     </button>
                 </div>
@@ -173,11 +179,29 @@
         </div>
     </div>
 
+    <div id="contact-page" class="page-content hidden max-w-4xl mx-auto px-4 py-8">
+        <button class="text-lg font-semibold text-gray-600 mb-6 flex items-center hover:text-ghaba-green transition" onclick="goBack()">
+            &#8592; Back
+        </button>
+        <h2 class="text-4xl font-extrabold text-gray-800 mb-6 border-b-4 border-ghaba-gold pb-2 uppercase">Contact Us</h2>
+        <div id="contact-content" class="bg-white p-6 rounded-xl shadow-2xl space-y-4">
+            </div>
+    </div>
+    
+    <div id="privacy-page" class="page-content hidden max-w-4xl mx-auto px-4 py-8">
+        <button class="text-lg font-semibold text-gray-600 mb-6 flex items-center hover:text-ghaba-green transition" onclick="goBack()">
+            &#8592; Back
+        </button>
+        <h2 class="text-4xl font-extrabold text-gray-800 mb-6 border-b-4 border-ghaba-gold pb-2 uppercase">Privacy Policy</h2>
+        <div id="privacy-content" class="bg-white p-6 rounded-xl shadow-2xl space-y-4">
+            </div>
+    </div>
+
     <div id="admin-page" class="page-content hidden max-w-7xl mx-auto px-4 py-8">
         
         <div id="admin-login-container" class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl border-4 border-ghaba-green">
             <h3 class="text-3xl font-bold text-ghaba-green mb-6 text-center">🔐 Admin Login</h3>
-            <p class="text-center text-sm text-gray-600 mb-6">Enter Password (पासवर्ड दर्ज करें): <span class="font-bold text-red-500">1234</span></p>
+            <p id="admin-login-hint" class="text-center text-sm text-gray-600 mb-6 hidden">Hint: The default password is 'love'</p>
             <form onsubmit="event.preventDefault(); loginAdmin()">
                 <div class="mb-4">
                     <label for="admin-password" class="block text-sm font-medium text-gray-700">Password</label>
@@ -194,6 +218,33 @@
             </button>
             <h2 class="text-4xl font-extrabold text-gray-800 mb-6 border-b-4 border-ghaba-green pb-2 uppercase">👑 Admin Panel (प्रशासनिक पैनल)</h2>
 
+            <section class="mb-8 p-6 bg-white rounded-xl shadow-2xl border border-ghaba-gold">
+                <h3 class="text-2xl font-bold text-ghaba-green mb-4">🔑 Admin Settings</h3>
+                <div class="space-y-4">
+                    <div class="p-4 border rounded-lg bg-red-50">
+                        <h4 class="font-bold text-red-600 mb-2">Change Admin Password (पासवर्ड बदलें)</h4>
+                        <input type="password" id="new-admin-password" placeholder="New Password" class="w-full p-2 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold mb-2">
+                        <button class="bg-red-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition shadow-md w-full" onclick="changeAdminPassword()">Change Password</button>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="mb-8 p-6 bg-white rounded-xl shadow-2xl border border-ghaba-gold">
+                <h3 class="text-2xl font-bold text-ghaba-green mb-4">📝 Content Editor (पेज कंटेंट)</h3>
+                <div class="space-y-6">
+                    <div class="p-4 border rounded-lg bg-gray-50">
+                        <h4 class="font-bold text-gray-800 mb-2">Contact Us Page Content</h4>
+                        <textarea id="contact-us-content-input" rows="5" class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold"></textarea>
+                        <button class="mt-2 w-full bg-ghaba-gold text-gray-900 font-semibold py-2 rounded-lg hover:bg-yellow-500 transition shadow-md" onclick="savePageContent('contact')">Save Contact Content</button>
+                    </div>
+                    <div class="p-4 border rounded-lg bg-gray-50">
+                        <h4 class="font-bold text-gray-800 mb-2">Privacy Policy Page Content</h4>
+                        <textarea id="privacy-policy-content-input" rows="5" class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold"></textarea>
+                        <button class="mt-2 w-full bg-ghaba-gold text-gray-900 font-semibold py-2 rounded-lg hover:bg-yellow-500 transition shadow-md" onclick="savePageContent('privacy')">Save Privacy Policy Content</button>
+                    </div>
+                </div>
+            </section>
+            
             <section class="mb-8 p-6 bg-white rounded-xl shadow-2xl border border-ghaba-gold">
                 <h3 class="text-2xl font-bold text-ghaba-green mb-4">💳 UPI / QR Code Management (भुगतान प्रबंधन)</h3>
                 <div id="admin-form-upi-qr" class="space-y-4 p-4 border rounded-lg bg-gray-50">
@@ -245,16 +296,16 @@
                     
                     <div>
                         <label for="home-link-1-label" class="block text-sm font-medium text-gray-700 mb-1">Link 1 Label (Best Seller)</label>
-                        <input type="text" id="home-link-1-label" placeholder="e.g., Best Seller Jewels" class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        <input type="text" id="home-link-1-label" placeholder="e.g., Best Seller Jewels" class="w-full p-3 border rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
                         <label for="home-link-1-image" class="block text-sm font-medium text-gray-700 mt-2 mb-1">Link 1 Image URL</label>
-                        <input type="text" id="home-link-1-image" placeholder="Paste image URL here..." class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        <input type="text" id="home-link-1-image" placeholder="Paste image URL here..." class="w-full p-3 border rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
                     </div>
                     
                     <div>
                         <label for="home-link-2-label" class="block text-sm font-medium text-gray-700 mb-1">Link 2 Label (Necklaces)</label>
-                        <input type="text" id="home-link-2-label" placeholder="e.g., Necklaces Collection" class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        <input type="text" id="home-link-2-label" placeholder="e.g., Necklaces Collection" class="w-full p-3 border rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
                         <label for="home-link-2-image" class="block text-sm font-medium text-gray-700 mt-2 mb-1">Link 2 Image URL</label>
-                        <input type="text" id="home-link-2-image" placeholder="Paste image URL here..." class="w-full p-3 border rounded-md shadow-sm text-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
+                        <input type="text" id="home-link-2-image" placeholder="Paste image URL here..." class="w-full p-3 border rounded-md shadow-sm focus:ring-ghaba-gold focus:border-ghaba-gold">
                     </div>
 
                     <button class="w-full bg-ghaba-gold text-gray-900 font-semibold py-3 rounded-lg hover:bg-yellow-500 transition shadow-md" onclick="saveHomeLinks()">Save and Update Home Links</button>
@@ -340,7 +391,7 @@
         <h2 class="text-4xl font-extrabold text-gray-800 mb-6 border-b-4 border-ghaba-gold pb-2 uppercase">Checkout (भुगतान)</h2>
         
         <div class="bg-white p-8 rounded-xl shadow-2xl space-y-8">
-            <form id="checkout-form" onsubmit="event.preventDefault(); placeOrder();">
+            <form id="checkout-form" onsubmit="event.preventDefault(); handleCheckoutSubmit(this);">
                 
                 <div class="border-b pb-6">
                     <h3 class="text-2xl font-bold text-ghaba-green mb-4 flex items-center">
@@ -414,20 +465,39 @@
                             </div>
                             <div class="flex space-x-2 mt-2 ml-8 text-xs text-gray-600">
                                 <span class="bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full font-medium">PhonePe</span>
-                                <span class="bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full font-medium">Paytm</span>
-                                <span class="bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-medium">UPI</span>
+                                <span class="text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full font-medium">Paytm</span>
+                                <span class="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-medium">UPI</span>
                                 <span class="bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full font-medium">Card</span>
                             </div>
                         </label>
                     </div>
-                </div>
+                    
+                    <div id="checkout-qr-section" class="bg-yellow-50 p-6 rounded-xl shadow-inner border border-yellow-200 mb-8 text-center hidden">
+                        <h3 class="font-bold text-xl text-gray-900 mb-3 flex items-center justify-center">
+                            <span class="text-4xl mr-2">&#128247;</span> Scan Any UPI App
+                        </h3>
+                        <div id="checkout-upi-logos" class="flex justify-center space-x-4 mb-4">
+                            <span class="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full font-medium">PhonePe</span>
+                            <span class="text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full font-medium">Paytm</span>
+                            <span class="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-medium">UPI</span>
+                        </div>
 
-                <button type="submit" class="w-full bg-ghaba-green text-white font-semibold py-4 rounded-xl hover:bg-green-800 transition shadow-lg text-xl mt-6">
+                        <img id="checkout-upi-qr-code" src="https://placehold.co/200x200?text=Scan+QR+Code" alt="UPI QR Code" class="w-48 h-48 mx-auto rounded-lg border-4 border-white shadow-xl">
+                        <p class="text-sm mt-3 text-gray-700">Scan to pay: <span class="font-bold text-xl text-red-600" id="checkout-qr-payment-amount">Rs. 0.00</span></p>
+                        <p class="text-sm mt-1 text-gray-700">Scan to pay directly! (सीधे भुगतान के लिए स्कैन करें)</p>
+                        <p class="text-lg font-bold text-red-600 mt-4">Time Remaining: <span id="checkout-qr-timer">3:00</span></p>
+                        <p class="text-sm mt-4 text-gray-800 font-semibold">After payment, <button type="button" onclick="confirmPayment()" class="text-ghaba-green hover:underline">Click Here to Confirm Order</button> (भुगतान के बाद ऑर्डर की पुष्टि करें)</p>
+                    </div>
+                </div>
+                
+                <button type="submit" class="w-full bg-ghaba-green text-white font-semibold py-4 rounded-xl hover:bg-green-800 transition shadow-lg text-xl mt-6" id="checkout-submit-btn">
                     ✅ Pay Now & Place Order (भुगतान करें) - <span id="checkout-submit-total">Rs. 0.00</span>
                 </button>
+                
             </form>
         </div>
     </div>
+    
     <div id="cart-page" class="page-content hidden max-w-7xl mx-auto px-4 py-8">
         <button class="text-lg font-semibold text-gray-600 mb-6 flex items-center hover:text-ghaba-green transition" onclick="goBack()">
             &#8592; Continue Shopping
@@ -476,6 +546,7 @@
             </div>
         </div>
     </div>
+    
     <footer class="bg-gray-800 text-white p-6 mt-10">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm">
             <div class="mb-4 md:mb-0 text-center md:text-left">
@@ -483,10 +554,10 @@
                 <p class="text-xs text-gray-400 mt-1">Made with elegance and care.</p>
             </div>
             <div class="flex items-center space-x-6">
-                <a href="#" class="hover:text-ghaba-gold transition">Contact Us</a>
-                <a href="#" class="hover:text-ghaba-gold transition">Privacy Policy</a>
+                <a href="#" onclick="showPage('contact-page'); renderPageContent('contact');" class="hover:text-ghaba-gold transition">Contact Us</a>
+                <a href="#" onclick="showPage('privacy-page'); renderPageContent('privacy');" class="hover:text-ghaba-gold transition">Privacy Policy</a>
                 
-                <a href="#admin" onclick="showPage('admin-page')" class="flex items-center space-x-1 text-xs px-3 py-1 bg-ghaba-gold text-gray-900 font-bold rounded-full shadow-lg transition hover:bg-yellow-400">
+                <a href="#admin" onclick="showPage('admin-page'); renderProductManagementList();" class="flex items-center space-x-1 text-xs px-3 py-1 bg-ghaba-gold text-gray-900 font-bold rounded-full shadow-lg transition hover:bg-yellow-400">
                     <span class="text-base">👑</span>
                     <span>.</span>
                 </a>
@@ -494,30 +565,615 @@
         </div>
     </footer>
 
-    <script src="script.js"></script>
-</body>
-</html>
-...
-    <div id="qr-section" class="bg-yellow-50 p-6 rounded-xl shadow-inner border border-yellow-200 mb-8 text-center hidden">
-        <h3 class="font-bold text-xl text-gray-900 mb-3 flex items-center justify-center">
-            <span class="text-4xl mr-2">&#128247;</span> Scan Any UPI App
-        </h3>
-        <div id="upi-logos" class="flex justify-center space-x-4 mb-4">
-            <span class="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full font-medium">PhonePe</span>
-            <span class="text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full font-medium">Paytm</span>
-            <span class="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-medium">UPI</span>
-        </div>
-
-        <img id="upi-qr-code" src="" alt="UPI QR Code" class="w-48 h-48 mx-auto rounded-lg border-4 border-white shadow-xl">
+    <script>
+        // --- Core Data/State (Simulated) ---
+        let currentPage = 'home-page';
+        let currentProductId = 1;
+        let qrTimerInterval;
         
-        <p class="text-sm mt-3 text-gray-700">UPI ID: <span class="font-bold text-gray-900" id="qr-upi-id"></span></p>
+        // Load data from Local Storage or use default values
+        let adminPassword = localStorage.getItem('ghabaAdminPassword') || 'love'; // Load dynamic password
+        let cart = JSON.parse(localStorage.getItem('ghabaCart')) || [];
+        let products = JSON.parse(localStorage.getItem('ghabaProducts')) || [
+            { id: 1, name: "Gold Plated Necklace", price: 1299.00, originalPrice: 1599.00, desc: "A stunning gold-plated necklace set, perfect for festive occasions. Made with high-quality brass and fine finishing.", img: "https://placehold.co/400x400/806440/ffffff?text=Product+1" },
+            { id: 2, name: "Elegant Stud Earrings", price: 499.00, originalPrice: 699.00, desc: "Simple yet elegant stud earrings with a cubic zirconia stone. Ideal for daily wear.", img: "https://placehold.co/400x400/806440/ffffff?text=Product+2" },
+            { id: 3, name: "Silver Oxidized Bangle", price: 799.00, originalPrice: 999.00, desc: "Traditional silver oxidized bangle with intricate design. A must-have for ethnic wear.", img: "https://placehold.co/400x400/806440/ffffff?text=Product+3" },
+            { id: 4, name: "Pearl Drop Earrings", price: 599.00, originalPrice: 799.00, desc: "Classic pearl drop earrings that complement any formal attire.", img: "https://placehold.co/400x400/806440/ffffff?text=Product+4" }
+        ];
+        let upiQrData = JSON.parse(localStorage.getItem('ghabaUpiQr')) || { upiId: 'ghaba@upi', qrUrl: 'https://placehold.co/200x200?text=Scan+QR+Code' };
+        let orders = JSON.parse(localStorage.getItem('ghabaOrders')) || [];
+        let pageContents = JSON.parse(localStorage.getItem('ghabaPageContents')) || {
+            contact: '<p class="text-lg">Thank you for reaching out! Please use the contact details below.</p><ul><li>Email: support@ghaba.com</li><li>Phone: +91 98765 43210</li></ul>',
+            privacy: '<p class="text-lg">This is our Privacy Policy. We value your privacy and only use Local Storage for data simulation.</p>'
+        };
 
-        <p class="text-sm mt-1 text-gray-700">Scan to pay: <span class="font-bold text-xl text-red-600" id="qr-payment-amount">Rs. 0.00</span></p>
-        <p class="text-sm mt-1 text-gray-700">Scan to pay directly! (सीधे भुगतान के लिए स्कैन करें)</p>
+        // --- Utility Functions ---
+        function saveProducts() {
+            localStorage.setItem('ghabaProducts', JSON.stringify(products));
+            renderProductManagementList();
+            renderProducts(); 
+        }
+        function saveCart() {
+            localStorage.setItem('ghabaCart', JSON.stringify(cart));
+            updateCartDisplay();
+        }
+        function saveOrders() {
+            localStorage.setItem('ghabaOrders', JSON.stringify(orders));
+            renderOrdersList();
+        }
+        function savePageContents() {
+            localStorage.setItem('ghabaPageContents', JSON.stringify(pageContents));
+        }
 
-        <p class="text-lg font-bold text-red-600 mt-4">Time Remaining: <span id="qr-timer">3:00</span></p>
-    </div>
+        // --- Navigation and Page Control ---
+        function showPage(pageId) {
+            document.querySelectorAll('.page-content').forEach(page => {
+                page.classList.add('hidden');
+            });
+            document.getElementById(pageId).classList.remove('hidden');
+            currentPage = pageId;
+            if (pageId !== 'checkout-page' && qrTimerInterval) {
+                 clearInterval(qrTimerInterval);
+                 document.getElementById('checkout-qr-section').classList.add('hidden');
+                 document.getElementById('checkout-submit-btn').classList.remove('hidden');
+            }
+            window.scrollTo(0, 0);
+        }
 
-    <div class="bg-gray-100 border-l-4 border-ghaba-green p-4 rounded-lg mb-6">
+        function goBack() {
+            // Enhanced goBack logic
+            if (currentPage === 'collections-page') {
+                showPage('home-page');
+            } else if (currentPage === 'product-page') {
+                showPage('collections-page');
+                renderProducts();
+            } else if (currentPage === 'cart-page') {
+                showPage('collections-page');
+                renderProducts();
+            } else if (currentPage === 'checkout-page') {
+                showPage('cart-page');
+            } else if (currentPage === 'admin-page') {
+                 // If already in admin content, go to home, else show login screen (optional)
+                document.getElementById('admin-content').classList.contains('hidden') ? showPage('home-page') : showPage('home-page');
+            } else {
+                 showPage('home-page'); // Default fallback
+            }
+        }
+        
+        // --- Search Functionality ---
+        function toggleSearchInput() {
+            const searchInput = document.getElementById('search-input');
+            searchInput.classList.toggle('hidden');
+            if (!searchInput.classList.contains('hidden')) {
+                searchInput.focus();
+            }
+            if (searchInput.classList.contains('hidden')) {
+                searchInput.value = '';
+                renderProducts(); 
+            }
+        }
+
+        function searchProducts(query) {
+            const lowerCaseQuery = query.toLowerCase();
+            if (currentPage !== 'collections-page') {
+                showPage('collections-page');
+            }
+
+            const filteredProducts = products.filter(p => 
+                p.name.toLowerCase().includes(lowerCaseQuery) ||
+                p.desc.toLowerCase().includes(lowerCaseQuery)
+            );
+            
+            renderProducts(filteredProducts);
+        }
+        
+        // --- Product Sorting/Display Logic (FIXED: Added sorting) ---
+        let currentProductsData = [...products];
+
+        function sortProducts(sortOption) {
+            let sortedProducts = [...products];
+            
+            switch (sortOption) {
+                case 'price-asc':
+                    sortedProducts.sort((a, b) => a.price - b.price);
+                    break;
+                case 'price-desc':
+                    sortedProducts.sort((a, b) => b.price - a.price);
+                    break;
+                case 'name-asc':
+                    sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
+                    break;
+                case 'default':
+                default:
+                    // Keep the default load order (based on ID, simulated here by re-cloning original array)
+                    sortedProducts = JSON.parse(localStorage.getItem('ghabaProducts')) || products;
+                    break;
+            }
+            currentProductsData = sortedProducts;
+            renderProducts(currentProductsData);
+        }
+
+        function renderProducts(productArray = products) {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = '';
+            
+            document.getElementById('product-count').textContent = productArray.length;
+
+            if (productArray.length === 0) {
+                 grid.innerHTML = '<p class="text-center text-gray-500 py-10 w-full col-span-full">No products found matching your criteria. (आपके मानदंडों से मेल खाने वाला कोई उत्पाद नहीं मिला।)</p>';
+                 return;
+            }
+
+            productArray.forEach(product => {
+                const discount = product.originalPrice > product.price ? 
+                    `<span class="text-sm line-through text-gray-400 ml-2">Rs. ${product.originalPrice.toFixed(2)}</span>` : '';
+                const discountTag = product.originalPrice > product.price ? 
+                    `<span class="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">SALE</span>` : '';
+
+                grid.innerHTML += `
+                    <div class="product-card product-${product.id} bg-white rounded-xl shadow-xl overflow-hidden group cursor-pointer hover:shadow-2xl transition duration-300" onclick="updateProductPage(${product.id}); showPage('product-page');">
+                        <div class="relative overflow-hidden">
+                            ${discountTag}
+                            <img src="${product.img}" alt="${product.name}" class="w-full h-64 object-cover transition duration-500 group-hover:scale-105">
+                            <button class="absolute bottom-0 left-0 w-full bg-ghaba-green text-white py-2 text-sm font-semibold opacity-0 group-hover:opacity-100 transition duration-300">
+                                View Product
+                            </button>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-semibold text-gray-800 truncate">${product.name}</h3>
+                            <div class="mt-1 flex items-center">
+                                <p class="text-lg font-bold text-ghaba-green">Rs. ${product.price.toFixed(2)}</p>
+                                ${discount}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        // --- Product Page Qty Update Function ---
+        function updateQty(change) {
+            const qtyInput = document.getElementById('qty-input');
+            let currentQty = parseInt(qtyInput.value);
+            currentQty += change;
+            if (currentQty < 1) {
+                currentQty = 1;
+            }
+            qtyInput.value = currentQty;
+            document.getElementById('qr-section').classList.add('hidden');
+        }
+
+        function updateProductPage(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) {
+                alert("Product not found!");
+                showPage('collections-page');
+                return;
+            }
+            currentProductId = productId;
+            document.getElementById('product-image').src = product.img;
+            document.getElementById('product-detail-title').textContent = product.name;
+            document.getElementById('product-detail-price').textContent = 'Rs. ' + product.price.toFixed(2);
+            document.getElementById('product-detail-original-price').textContent = 'Rs. ' + product.originalPrice.toFixed(2);
+            document.getElementById('product-detail-desc').textContent = product.desc;
+            document.getElementById('qr-section').classList.add('hidden'); 
+            document.getElementById('qty-input').value = 1;
+        }
+
+        // --- Cart Functions ---
+        function addToCart(productId, qty) {
+            qty = parseInt(qty);
+            const product = products.find(p => p.id === productId);
+            if (!product || qty < 1) return;
+
+            const existingItemIndex = cart.findIndex(item => item.id === productId);
+
+            if (existingItemIndex !== -1) {
+                cart[existingItemIndex].qty += qty;
+            } else {
+                cart.push({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    img: product.img,
+                    qty: qty
+                });
+            }
+            saveCart();
+            const messageElement = document.getElementById('cart-confirm-message');
+            messageElement.classList.remove('hidden');
+            setTimeout(() => { messageElement.classList.add('hidden'); }, 3000);
+        }
+
+        function updateCartItemQty(index, change) {
+            cart[index].qty += change;
+            if (cart[index].qty <= 0) {
+                cart.splice(index, 1);
+            }
+            saveCart();
+            updateCartDisplay();
+        }
+
+        function removeCartItem(index) {
+            cart.splice(index, 1);
+            saveCart();
+            updateCartDisplay();
+        }
+
+        function calculateTotal() {
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            return { subtotal, total: subtotal };
+        }
+
+        function updateCartDisplay() {
+            const { subtotal, total } = calculateTotal();
+            const cartCountElement = document.getElementById('cart-count');
+            const cartPageCountElement = document.getElementById('cart-page-count');
+            const cartList = document.getElementById('cart-items-list');
+
+            const itemCount = cart.reduce((sum, item) => sum + item.qty, 0);
+            
+            cartCountElement.textContent = itemCount;
+            cartPageCountElement.textContent = itemCount;
+            document.getElementById('cart-summary-item-count').textContent = itemCount;
+            document.getElementById('cart-summary-subtotal').textContent = 'Rs. ' + subtotal.toFixed(2);
+            document.getElementById('cart-summary-total').textContent = 'Rs. ' + total.toFixed(2);
+            
+            cartList.innerHTML = '';
+            if (cart.length === 0) {
+                cartList.innerHTML = '<p class="text-center text-gray-500 py-10">Your cart is empty. Start shopping! (आपका कार्ट खाली है। खरीदारी शुरू करें!)</p>';
+                document.getElementById('checkout-btn-full').disabled = true;
+            } else {
+                document.getElementById('checkout-btn-full').disabled = false;
+                cart.forEach((item, index) => {
+                    cartList.innerHTML += `
+                        <div class="flex items-center space-x-4 border-b pb-4">
+                            <img src="${item.img}" alt="${item.name}" class="w-24 h-24 object-cover rounded-lg shadow">
+                            <div class="flex-grow">
+                                <p class="font-bold text-gray-900">${item.name}</p>
+                                <p class="text-sm text-gray-600">Price: Rs. ${item.price.toFixed(2)}</p>
+                            </div>
+                            <div class="flex flex-col items-end space-y-2">
+                                <div class="flex items-center border rounded-lg overflow-hidden">
+                                    <button class="p-2 text-gray-600 hover:bg-gray-100 transition" onclick="updateCartItemQty(${index}, -1)">-</button>
+                                    <span class="p-2 text-sm font-semibold">${item.qty}</span>
+                                    <button class="p-2 text-gray-600 hover:bg-gray-100 transition" onclick="updateCartItemQty(${index}, 1)">+</button>
+                                </div>
+                                <p class="font-bold text-lg text-ghaba-green">Rs. ${(item.price * item.qty).toFixed(2)}</p>
+                                <button class="text-xs text-red-500 hover:text-red-700" onclick="removeCartItem(${index})">Remove</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        }
+        
+        // --- Checkout Functions ---
+        function setupCheckoutPage() {
+            updateCartDisplay();
+            const { subtotal, total } = calculateTotal();
+            document.getElementById('checkout-subtotal').textContent = 'Rs. ' + subtotal.toFixed(2);
+            document.getElementById('checkout-total').textContent = 'Rs. ' + total.toFixed(2);
+            document.getElementById('checkout-submit-total').textContent = 'Rs. ' + total.toFixed(2);
+            document.getElementById('checkout-qr-payment-amount').textContent = 'Rs. ' + total.toFixed(2);
+            
+            const itemList = document.getElementById('checkout-items-list');
+            itemList.innerHTML = '';
+            if (cart.length === 0) {
+                 itemList.innerHTML = '<p class="text-red-500 font-semibold">Cart is empty. Please add items to proceed.</p>';
+                 document.getElementById('checkout-submit-btn').disabled = true;
+            } else {
+                 document.getElementById('checkout-submit-btn').disabled = false;
+                 cart.forEach(item => {
+                    itemList.innerHTML += `
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-700">${item.name} x ${item.qty}</span>
+                            <span class="font-medium text-gray-800">Rs. ${(item.price * item.qty).toFixed(2)}</span>
+                        </div>
+                    `;
+                 });
+            }
+            
+            document.getElementById('checkout-qr-section').classList.add('hidden');
+            document.getElementById('checkout-submit-btn').classList.remove('hidden');
+        }
+
+
+        // --- Checkout Validation & QR Code (FIXED: Timer added) ---
+        let timeRemaining = 180; // 3 minutes
+
+        function startQrTimer() {
+            timeRemaining = 180;
+            const timerElement = document.getElementById('checkout-qr-timer');
+            
+            if (qrTimerInterval) clearInterval(qrTimerInterval);
+
+            function updateTimer() {
+                const minutes = Math.floor(timeRemaining / 60);
+                const seconds = timeRemaining % 60;
+                timerElement.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+                if (timeRemaining <= 0) {
+                    clearInterval(qrTimerInterval);
+                    alert('Payment session expired. Please try again.');
+                    document.getElementById('checkout-qr-section').classList.add('hidden');
+                    document.getElementById('checkout-submit-btn').classList.remove('hidden');
+                    return;
+                }
+                timeRemaining--;
+            }
+            
+            updateTimer(); 
+            qrTimerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function handleCheckoutSubmit(form) {
+            if (form.checkValidity()) {
+                showQrCodeForCheckout();
+            } else {
+                form.reportValidity();
+            }
+        }
+        
+        function showQrCodeForCheckout() {
+            const qrSection = document.getElementById('checkout-qr-section');
+            const { total } = calculateTotal();
+
+            qrSection.classList.remove('hidden');
+
+            document.getElementById('checkout-upi-qr-code').src = upiQrData.qrUrl || 'https://placehold.co/200x200?text=Scan+QR+Code'; 
+            document.getElementById('checkout-qr-payment-amount').textContent = 'Rs. ' + total.toFixed(2);
+
+            document.getElementById('checkout-submit-btn').classList.add('hidden');
+            startQrTimer(); // Start the timer
+        }
+
+        function confirmPayment() {
+            if (qrTimerInterval) clearInterval(qrTimerInterval);
+
+            const orderDetails = {
+                id: Date.now(),
+                items: cart,
+                total: calculateTotal().total,
+                customer: {
+                    name: document.getElementById('checkout-name').value,
+                    phone: document.getElementById('checkout-phone').value,
+                    address: document.getElementById('checkout-address').value,
+                },
+                date: new Date().toLocaleString(),
+                status: 'Payment Confirmed / Pending Fulfillment'
+            };
+            
+            orders.unshift(orderDetails);
+            saveOrders();
+
+            alert('Order Placed Successfully! (ऑर्डर सफलतापूर्वक दिया गया!) We will ship to ' + orderDetails.customer.address);
+            
+            cart = [];
+            saveCart();
+            
+            document.getElementById('checkout-form').reset();
+            document.getElementById('checkout-submit-btn').classList.remove('hidden');
+            document.getElementById('checkout-qr-section').classList.add('hidden');
+            
+            showPage('home-page');
+        }
+
+        // --- Admin Functions (FIXED: Login, Password Change, Content Editor) ---
+
+        function loginAdmin() {
+            const password = document.getElementById('admin-password').value;
+            const errorElement = document.getElementById('login-error');
+            if (password === adminPassword) {
+                document.getElementById('admin-login-container').classList.add('hidden');
+                document.getElementById('admin-content').classList.remove('hidden');
+                renderProductManagementList();
+                renderOrdersList();
+                loadPageContentsToAdmin(); // Load existing content
+            } else {
+                errorElement.classList.remove('hidden');
+                alert('Invalid Password!');
+            }
+        }
+
+        function changeAdminPassword() {
+            const newPass = document.getElementById('new-admin-password').value;
+            if (newPass.length < 4) {
+                alert('Password must be at least 4 characters long.');
+                return;
+            }
+            adminPassword = newPass;
+            localStorage.setItem('ghabaAdminPassword', adminPassword);
+            document.getElementById('new-admin-password').value = '';
+            alert('Admin Password updated successfully!');
+        }
+        
+        // --- Page Content Management ---
+        function loadPageContentsToAdmin() {
+            document.getElementById('contact-us-content-input').value = pageContents.contact;
+            document.getElementById('privacy-policy-content-input').value = pageContents.privacy;
+        }
+
+        function savePageContent(type) {
+            let content;
+            if (type === 'contact') {
+                content = document.getElementById('contact-us-content-input').value;
+                pageContents.contact = content;
+            } else if (type === 'privacy') {
+                content = document.getElementById('privacy-policy-content-input').value;
+                pageContents.privacy = content;
+            }
+            savePageContents();
+            alert(`${type.toUpperCase()} Page content updated!`);
+        }
+
+        function renderPageContent(type) {
+            const targetElement = document.getElementById(`${type}-content`);
+            const content = pageContents[type];
+            targetElement.innerHTML = content;
+        }
+
+
+        function saveImageUrls() {
+            alert('Hero Image settings saved (Simulated)!');
+        }
+        
+        function saveHomeLinks() {
+            alert('Home link settings saved (Simulated)!');
+        }
+        
+        function clearAllOrders() {
+            if (confirm('Are you sure you want to clear ALL orders? This action cannot be undone.')) {
+                orders = [];
+                saveOrders();
+                alert('All orders cleared.');
+            }
+        }
+        
+        function renderOrdersList() {
+            const listContainer = document.getElementById('orders-list');
+            listContainer.innerHTML = '';
+            
+            if (orders.length === 0) {
+                 listContainer.innerHTML = '<p class="text-center text-gray-500 py-4">No orders placed yet.</p>';
+                 return;
+            }
+
+            orders.forEach(order => {
+                listContainer.innerHTML += `
+                    <div class="p-4 bg-gray-100 rounded-lg shadow-sm border border-gray-200">
+                        <p class="font-bold text-lg text-ghaba-green">Order ID: #${order.id}</p>
+                        <p class="text-sm text-gray-700">Customer: ${order.customer.name} | Phone: ${order.customer.phone}</p>
+                        <p class="text-sm text-gray-700">Total: <span class="font-bold">Rs. ${order.total.toFixed(2)}</span> | Date: ${order.date}</p>
+                        <p class="text-sm text-red-600 font-semibold">Status: ${order.status}</p>
+                        <p class="text-xs mt-2 text-gray-500">Items: ${order.items.map(i => `${i.name} (${i.qty})`).join(', ')}</p>
+                    </div>
+                `;
+            });
+        }
+
+
+        function saveUpiQrData() {
+            const upiId = document.getElementById('upi-id-input').value;
+            const qrUrl = document.getElementById('qr-code-url-input').value;
+            
+            upiQrData = { upiId, qrUrl: qrUrl || 'https://placehold.co/200x200?text=Scan+QR+Code' };
+            localStorage.setItem('ghabaUpiQr', JSON.stringify(upiQrData));
+            alert('UPI/QR data saved successfully!');
+        }
+        
+        function openProductEditForm(productId) {
+            const modal = document.getElementById('product-modal');
+            const form = document.getElementById('product-edit-form');
+            form.reset();
+            document.getElementById('edit-product-id').value = '';
+            document.getElementById('product-modal-title').textContent = 'Add New Product';
+
+            if (productId) {
+                const product = products.find(p => p.id === productId);
+                if (product) {
+                    document.getElementById('product-modal-title').textContent = 'Edit Product';
+                    document.getElementById('edit-product-id').value = product.id;
+                    document.getElementById('edit-name').value = product.name;
+                    document.getElementById('edit-price').value = product.price;
+                    document.getElementById('edit-original-price').value = product.originalPrice;
+                    document.getElementById('edit-desc').value = product.desc;
+                    document.getElementById('edit-image-url').value = product.img;
+                }
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function saveProduct() {
+            const id = document.getElementById('edit-product-id').value;
+            const name = document.getElementById('edit-name').value;
+            const price = parseFloat(document.getElementById('edit-price').value);
+            const originalPrice = parseFloat(document.getElementById('edit-original-price').value) || price;
+            const desc = document.getElementById('edit-desc').value;
+            let img = document.getElementById('edit-image-url').value;
+            
+            const fileInput = document.getElementById('edit-image-file');
+            if (fileInput.files.length > 0) {
+                 img = 'https://placehold.co/400x400/303632/ffffff?text=Custom+Product';
+            }
+            
+            if (img === '') {
+                 img = 'https://placehold.co/400x400/969696/ffffff?text=No+Image';
+            }
+
+            if (id) {
+                const index = products.findIndex(p => p.id == id);
+                if (index !== -1) {
+                    products[index] = { id: parseInt(id), name, price, originalPrice, desc, img };
+                }
+            } else {
+                const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+                products.push({ id: newId, name, price, originalPrice, desc, img });
+            }
+            
+            document.getElementById('product-modal').classList.add('hidden');
+            saveProducts();
+            alert('Product saved successfully!');
+        }
+
+        function deleteProduct(productId) {
+            if (confirm('Are you sure you want to delete this product?')) {
+                products = products.filter(p => p.id !== productId);
+                saveProducts();
+                alert('Product deleted successfully.');
+            }
+        }
+        
+        function renderProductManagementList() {
+            const listContainer = document.getElementById('product-management-list');
+            listContainer.innerHTML = '';
+
+            if (products.length === 0) {
+                listContainer.innerHTML = '<p class="text-center text-gray-500 py-4">No products found. Add a new one.</p>';
+                return;
+            }
+
+            products.forEach(product => {
+                listContainer.innerHTML += `
+                    <div class="flex items-center p-4 bg-white border rounded-lg shadow-sm justify-between">
+                        <div class="flex items-center space-x-4">
+                            <img src="${product.img}" alt="${product.name}" class="w-12 h-12 object-cover rounded">
+                            <div>
+                                <p class="font-semibold text-gray-900">${product.name}</p>
+                                <p class="text-sm text-gray-600">ID: ${product.id} | Price: Rs. ${product.price.toFixed(2)}</p>
+                            </div>
+                        </div>
+                        <div class="space-x-2">
+                            <button class="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition" onclick="openProductEditForm(${product.id})">
+                                Edit
+                            </button>
+                            <button class="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition" onclick="deleteProduct(${product.id})">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCartDisplay();
+            // Load Admin UPI data into form
+            document.getElementById('upi-id-input').value = upiQrData.upiId;
+            document.getElementById('qr-code-url-input').value = upiQrData.qrUrl === 'https://placehold.co/200x200?text=Scan+QR+Code' ? '' : upiQrData.qrUrl;
+            
+            // Show the default home page
+            showPage('home-page');
+            
+            // Render default products when collections page loads first time
+            if (currentPage === 'collections-page') {
+                renderProducts();
+            }
+            // Add a hint to the admin login (optional: can be removed completely if preferred)
+            // document.getElementById('admin-login-hint').classList.remove('hidden');
+        });
+
+    </script>
 </body>
 </html>
