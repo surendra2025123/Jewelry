@@ -1,5 +1,17 @@
 // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
+const {
+  initializeApp,
+  getFirestore,
+  doc,
+  getDocs,
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  getAnalytics
+} = window.firebaseModules;
+
 import { getAnalytics } from "firebase/analytics";
 import { 
     getFirestore, doc, collection, getDocs, setDoc, updateDoc, deleteDoc, 
