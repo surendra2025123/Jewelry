@@ -43,22 +43,22 @@ const COLLECTION = {
 
 
 // --- FIREBASE GLOBALS & INITIALIZATION ---
-// ये ग्लोबल वैरियेबल्स अब Firebase लिसनर्स द्वारा पॉपुलेट और सिंक किए जाएंगे।
+// à¤¯à¥‡ à¤—à¥à¤²à¥‹à¤¬à¤² à¤µà¥ˆà¤°à¤¿à¤¯à¥‡à¤¬à¤²à¥à¤¸ à¤…à¤¬ Firebase à¤²à¤¿à¤¸à¤¨à¤°à¥à¤¸ à¤¦à¥à¤µà¤¾à¤°à¤¾ à¤ªà¥‰à¤ªà¥à¤²à¥‡à¤Ÿ à¤”à¤° à¤¸à¤¿à¤‚à¤• à¤•à¤¿à¤ à¤œà¤¾à¤à¤‚à¤—à¥‡à¥¤
 let initialProducts = []; 
 let products = [];
-// Cart अभी भी user के ब्राउज़र में लोकल रहेगा (Local Storage)
+// Cart à¤…à¤­à¥€ à¤­à¥€ user à¤•à¥‡ à¤¬à¥à¤°à¤¾à¤‰à¤œà¤¼à¤° à¤®à¥‡à¤‚ à¤²à¥‹à¤•à¤² à¤°à¤¹à¥‡à¤—à¤¾ (Local Storage)
 let currentCart = JSON.parse(localStorage.getItem('ghaba_cart')) || []; 
 let currentProductId = 1; 
 let heroLabels = {};
 let homeLinksData = {};
 let upiQrData = {};
-let ADMIN_PASSWORD = "1234"; // यह cloud से लोड होगा
+let ADMIN_PASSWORD = "1234"; // à¤¯à¤¹ cloud à¤¸à¥‡ à¤²à¥‹à¤¡ à¤¹à¥‹à¤—à¤¾
 let orders = [];
-let adminSettings = {}; // Cloud से लोड की गई सभी सेटिंग्स
+let adminSettings = {}; // Cloud à¤¸à¥‡ à¤²à¥‹à¤¡ à¤•à¥€ à¤—à¤ˆ à¤¸à¤­à¥€ à¤¸à¥‡à¤Ÿà¤¿à¤‚à¤—à¥à¤¸
 const DEFAULT_QR_URL = "https://placehold.co/200x200/2a3c2a/ffc72c?text=SCAN+HERE"; 
 let qrTimerInterval;
 
-// Firebase फंक्शन्स को अब सीधे module scope से उपयोग किया जाता है
+// Firebase à¤«à¤‚à¤•à¥à¤¶à¤¨à¥à¤¸ à¤•à¥‹ à¤…à¤¬ à¤¸à¥€à¤§à¥‡ module scope à¤¸à¥‡ à¤‰à¤ªà¤¯à¥‹à¤— à¤•à¤¿à¤¯à¤¾ à¤œà¤¾à¤¤à¤¾ à¤¹à¥ˆ
 if (!db) {
     console.error("Firebase Firestore is not initialized. Cloud features disabled.");
 }
@@ -97,7 +97,7 @@ function showPage(pageId, isBack = false) {
         const contentId = pageId.replace('-page', '-content');
         const contentField = pageId === 'contact-page' ? 'contactPageContent' : 'privacyPageContent';
         const contentText = adminSettings[contentField] || 'Content not set yet. Please update from Admin Panel.';
-        // <pre> tag whitespace को बनाए रखता है (जैसे कि अगर आपने एडमिन पैनल में नई लाइन डाली हो)
+        // <pre> tag whitespace à¤•à¥‹ à¤¬à¤¨à¤¾à¤ à¤°à¤–à¤¤à¤¾ à¤¹à¥ˆ (à¤œà¥ˆà¤¸à¥‡ à¤•à¤¿ à¤…à¤—à¤° à¤†à¤ªà¤¨à¥‡ à¤à¤¡à¤®à¤¿à¤¨ à¤ªà¥ˆà¤¨à¤² à¤®à¥‡à¤‚ à¤¨à¤ˆ à¤²à¤¾à¤‡à¤¨ à¤¡à¤¾à¤²à¥€ à¤¹à¥‹)
         document.getElementById(contentId).innerHTML = `<pre class="whitespace-pre-wrap">${contentText}</pre>`;
     }
     
@@ -124,7 +124,7 @@ function loginAdmin() {
         loginContainer.classList.add('hidden');
         adminContent.classList.remove('hidden');
         loginError.classList.add('hidden');
-        alert('Welcome to Admin Panel! (एडमिन पैनल में आपका स्वागत है!)');
+        alert('Welcome to Admin Panel! (à¤à¤¡à¤®à¤¿à¤¨ à¤ªà¥ˆà¤¨à¤² à¤®à¥‡à¤‚ à¤†à¤ªà¤•à¤¾ à¤¸à¥à¤µà¤¾à¤—à¤¤ à¤¹à¥ˆ!)');
         renderAdminPanel(); 
         populateAdminFields();
     } else {
@@ -182,7 +182,7 @@ function renderProducts(productArray = products) {
     document.getElementById('product-count').textContent = productArray.length;
     
     if (productArray.length === 0) {
-        grid.innerHTML = '<p class="text-xl text-gray-500 col-span-full text-center py-10">No products found. (कोई उत्पाद नहीं मिला।)</p>';
+        grid.innerHTML = '<p class="text-xl text-gray-500 col-span-full text-center py-10">No products found. (à¤•à¥‹à¤ˆ à¤‰à¤¤à¥à¤ªà¤¾à¤¦ à¤¨à¤¹à¥€à¤‚ à¤®à¤¿à¤²à¤¾à¥¤)</p>';
         return;
     }
     
@@ -200,8 +200,8 @@ function renderProducts(productArray = products) {
             <div class="p-4">
                 <h3 class="font-semibold text-lg text-gray-900 mb-1 truncate">${product.name}</h3>
                 <div class="flex items-center space-x-2">
-                    <p class="text-xl font-bold text-ghaba-green">₹${product.price.toFixed(2)}</p>
-                    ${product.originalPrice > product.price ? `<p class="text-sm line-through text-gray-400">₹${product.originalPrice.toFixed(2)}</p>` : ''}
+                    <p class="text-xl font-bold text-ghaba-green">â‚¹${product.price.toFixed(2)}</p>
+                    ${product.originalPrice > product.price ? `<p class="text-sm line-through text-gray-400">â‚¹${product.originalPrice.toFixed(2)}</p>` : ''}
                 </div>
             </div>
         `;
@@ -244,8 +244,8 @@ function updateProductPage(productId) {
     currentProductId = productId;
     document.getElementById('product-image').src = product.image;
     document.getElementById('product-detail-title').textContent = product.name;
-    document.getElementById('product-detail-price').textContent = `₹${product.price.toFixed(2)}`;
-    document.getElementById('product-detail-original-price').textContent = product.originalPrice > product.price ? `₹${product.originalPrice.toFixed(2)}` : '';
+    document.getElementById('product-detail-price').textContent = `â‚¹${product.price.toFixed(2)}`;
+    document.getElementById('product-detail-original-price').textContent = product.originalPrice > product.price ? `â‚¹${product.originalPrice.toFixed(2)}` : '';
     document.getElementById('product-detail-desc').textContent = product.desc;
     document.getElementById('qty-input').value = 1;
     document.getElementById('qr-section').classList.add('hidden');
@@ -286,8 +286,8 @@ function updateCartDisplay() {
     if (cartPageCountElement) cartPageCountElement.textContent = itemCount;
     if (document.getElementById('cart-summary-item-count')) {
         document.getElementById('cart-summary-item-count').textContent = itemCount;
-        document.getElementById('cart-summary-subtotal').textContent = '₹' + subtotal.toFixed(2);
-        document.getElementById('cart-summary-total').textContent = '₹' + total.toFixed(2);
+        document.getElementById('cart-summary-subtotal').textContent = 'â‚¹' + subtotal.toFixed(2);
+        document.getElementById('cart-summary-total').textContent = 'â‚¹' + total.toFixed(2);
     }
     
     if (cartList) {
@@ -308,7 +308,7 @@ function updateCartDisplay() {
                 <div class="flex-grow flex justify-between items-center">
                     <div>
                         <p class="font-bold text-lg text-gray-900">${item.name}</p>
-                        <p class="text-ghaba-green font-bold text-md">₹${item.price.toFixed(2)}</p>
+                        <p class="text-ghaba-green font-bold text-md">â‚¹${item.price.toFixed(2)}</p>
                         <button class="text-sm text-red-500 mt-2 hover:text-red-700" onclick="removeFromCart('${item.id}')">Remove</button>
                     </div>
                     <div class="flex flex-col items-end">
@@ -317,7 +317,7 @@ function updateCartDisplay() {
                             <input type="number" value="${item.quantity}" min="1" class="w-full text-center text-sm border-x p-2 focus:outline-none" onchange="updateCartQuantity('${item.id}', this.value)">
                             <button class="p-2 text-gray-600 hover:bg-gray-100 transition text-sm" onclick="updateCartQuantity('${item.id}', ${item.quantity + 1})">+</button>
                         </div>
-                        <p class="font-bold text-gray-800">Total: ₹${(item.price * item.quantity).toFixed(2)}</p>
+                        <p class="font-bold text-gray-800">Total: â‚¹${(item.price * item.quantity).toFixed(2)}</p>
                     </div>
                 </div>
             `;
@@ -388,9 +388,9 @@ function setupCheckoutPage() {
     }
 
     document.getElementById('checkout-summary-item-count').textContent = currentCart.reduce((sum, item) => sum + item.quantity, 0);
-    document.getElementById('checkout-summary-subtotal').textContent = '₹' + subtotal.toFixed(2);
-    document.getElementById('checkout-summary-total').textContent = '₹' + total.toFixed(2);
-    document.getElementById('checkout-submit-total').textContent = '₹' + total.toFixed(2);
+    document.getElementById('checkout-summary-subtotal').textContent = 'â‚¹' + subtotal.toFixed(2);
+    document.getElementById('checkout-summary-total').textContent = 'â‚¹' + total.toFixed(2);
+    document.getElementById('checkout-submit-total').textContent = 'â‚¹' + total.toFixed(2);
     
     document.getElementById('checkout-qr-section').classList.add('hidden');
     document.getElementById('checkout-submit-btn').classList.remove('hidden');
@@ -427,7 +427,7 @@ function showQrCodeForCheckout() {
     
     qrSection.classList.remove('hidden');
     document.getElementById('checkout-upi-qr-code').src = upiQrData.qrUrl || DEFAULT_QR_URL;
-    document.getElementById('checkout-qr-payment-amount').textContent = '₹' + total.toFixed(2);
+    document.getElementById('checkout-qr-payment-amount').textContent = 'â‚¹' + total.toFixed(2);
     document.getElementById('checkout-submit-btn').classList.add('hidden');
     startQrTimer();
 }
@@ -557,7 +557,7 @@ async function placeOrder(customerDetails, totalAmount) {
         saveCart();
         updateCartDisplay();
         
-        alert(`Order Placed Successfully in Cloud! (ऑर्डर सफलतापूर्वक दिया गया!) \nTotal: ₹${totalAmount.toFixed(2)}\nThank you!`); 
+        alert(`Order Placed Successfully in Cloud! (à¤‘à¤°à¥à¤¡à¤° à¤¸à¤«à¤²à¤¤à¤¾à¤ªà¥‚à¤°à¥à¤µà¤• à¤¦à¤¿à¤¯à¤¾ à¤—à¤¯à¤¾!) \nTotal: â‚¹${totalAmount.toFixed(2)}\nThank you!`); 
         showPage('home-page');
     } catch (e) {
         console.error("Error placing order: ", e);
@@ -865,7 +865,7 @@ function renderProductManagementList() {
 
     listDiv.innerHTML = ''; 
     if (initialProducts.length === 0) {
-        listDiv.innerHTML = '<p class="text-gray-500 italic">No products in the store. Add a new one! (स्टोर में कोई उत्पाद नहीं है। एक नया जोड़ें!)</p>';
+        listDiv.innerHTML = '<p class="text-gray-500 italic">No products in the store. Add a new one! (à¤¸à¥à¤Ÿà¥‹à¤° à¤®à¥‡à¤‚ à¤•à¥‹à¤ˆ à¤‰à¤¤à¥à¤ªà¤¾à¤¦ à¤¨à¤¹à¥€à¤‚ à¤¹à¥ˆà¥¤ à¤à¤• à¤¨à¤¯à¤¾ à¤œà¥‹à¤¡à¤¼à¥‡à¤‚!)</p>';
         return;
     }
 
@@ -877,7 +877,7 @@ function renderProductManagementList() {
                 <img src="${product.image}" alt="${product.name}" class="w-12 h-12 object-cover rounded">
                 <div>
                     <p class="font-semibold text-gray-900">${product.name}</p>
-                    <p class="text-sm text-ghaba-green">₹${product.price.toFixed(2)}</p>
+                    <p class="text-sm text-ghaba-green">â‚¹${product.price.toFixed(2)}</p>
                 </div>
             </div>
             <div class="space-x-2 flex">
@@ -946,7 +946,7 @@ function renderOrdersList() {
         
         const itemsList = order.items.map(item => `
             <li class="text-sm text-gray-700">
-                ${item.name} (x${item.quantity}) - ₹${(item.price * item.quantity).toFixed(2)}
+                ${item.name} (x${item.quantity}) - â‚¹${(item.price * item.quantity).toFixed(2)}
             </li>
         `).join('');
 
@@ -958,7 +958,7 @@ function renderOrdersList() {
             <p class="text-sm text-gray-700">Customer: ${order.customer.name} | Phone: ${order.customer.phone}</p>
             <p class="text-sm text-gray-700">Address: ${order.customer.address}, ${order.customer.city} (${order.customer.pincode})</p>
             <p class="text-sm text-gray-700">Date: ${date}</p>
-            <p class="font-bold text-gray-900 mt-2">Total: <span class="text-red-600">₹${order.total.toFixed(2)}</span> (${order.payment})</p>
+            <p class="font-bold text-gray-900 mt-2">Total: <span class="text-red-600">â‚¹${order.total.toFixed(2)}</span> (${order.payment})</p>
             <ul class="list-disc list-inside mt-2 text-sm ml-2">
                 ${itemsList}
             </ul>
